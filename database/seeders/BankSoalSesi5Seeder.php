@@ -130,8 +130,66 @@ class BankSoalSesi5Seeder extends Seeder
             ];
         }
 
-        // 3. Process positions from lang/id_sesi5.json
-        $alreadyAdded = ['IT STAFF', 'ADMIN MARKETING & SOSMED'];
+        // 3. KHUSUS (Requested by Bu Celine / PT Panen Anugerah Nusindo for Singapore candidate)
+        $khususScenarios = [
+            [
+                'judul' => 'SCENARIO 1: MANUFACTURING & INTERNAL MANAGEMENT CRISIS',
+                'deskripsi' => "PT Nusantara Industri faces a major crisis after a multi-billion rupiah shipment was rejected by its primary client due to inconsistent quality and delivery delays. The client froze all payments and threatened contract termination. Internal conflict erupted within the company:\n● Production blames Procurement for purchasing cheap, low-grade raw materials.\n● Procurement blames Production for negligence and failing to inspect raw materials upon arrival at the factory.",
+                'pertanyaan' => [
+                    '1. Following a major product rejection and conflict between departments, how would you handle the situation? Explain the actions you would take, the reasoning behind your decisions, and how you would restore effective collaboration across teams.',
+                    '2. Disrupted cash inflows have begun affecting company operations. What priorities would you establish in managing the situation? Explain your considerations and the key risks you would anticipate.',
+                    '3. The cancelled transaction creates tax implications for the company. How would you evaluate the situation and determine the appropriate actions to minimize future tax risks?',
+                    '4. News regarding product quality issues has begun circulating in the market. How would you manage the company\'s communication strategy to maintain customer confidence?',
+                    '5. The customer has submitted claims that could significantly impact the company\'s financial position. How would you approach the negotiation? Explain your strategy and considerations.'
+                ]
+            ],
+            [
+                'judul' => 'SCENARIO 2: DOLLAR FLUCTUATION & IMPORTED RAW MATERIALS',
+                'deskripsi' => "PT Boga Utama imports nearly 70% of its core raw materials from abroad in US Dollars (USD) and sells finished goods domestically in Indonesian Rupiah (IDR). A sudden surge in the USD exchange rate drove raw material import costs up by 30%. Foreign suppliers refuse payment extensions. Meanwhile, the local market is highly price-sensitive, if selling prices are raised abruptly, consumers will switch to cheaper competitors. To survive, top management made the tough call to cut employee incentive/benefit budgets while demanding significantly higher operational efficiency across all departments.",
+                'pertanyaan' => [
+                    '1. The company has reduced employee benefits while increasing operational demands. How would you maintain employee motivation and performance under these conditions?',
+                    '2. Rising raw material costs are putting pressure on company profitability. How would you evaluate the financial situation and determine the priorities going forward?',
+                    '3. Changes in import values affect the company\'s tax obligations. How would you assess the impact and ensure continued tax compliance?',
+                    '4. The company needs to adjust selling prices in a highly competitive market. How would you maintain the product\'s attractiveness to customers?',
+                    '5. A key customer rejects the company\'s proposed price adjustment. How would you manage the situation while maintaining the business relationship?'
+                ]
+            ],
+            [
+                'judul' => 'SCENARIO 3: AUTOMATION & CUSTOMS BOTTLENECKS',
+                'deskripsi' => "Industrial equipment supplier PT Teknik Utama made a major capital investment by importing multi-billion rupiah high-tech factory machinery from Europe to automate production. However, a crisis arose at the port: shipment containers were held up by Customs authorities due to documentation discrepancies regarding import permits and Tariff Codes (HS Codes). This customs bottleneck pushed the factory setup timeline back by a full month. Meanwhile, foreign technicians hired to install the machinery had already arrived in Indonesia, accruing expensive daily consultation fees while sitting idle.",
+                'pertanyaan' => [
+                    '1. Operational changes have created uncertainty among employees. How would you manage internal communication and maintain a positive working environment?',
+                    '2. Project delays have generated significant unexpected costs. How would you evaluate the financial impact and determine the appropriate budget allocation?',
+                    '3. The company faces customs-related administrative issues that may result in financial consequences. How would you manage the situation?',
+                    '4. A product launch delay may affect market confidence. How would you maintain customer interest until the product becomes available?',
+                    '5. Production delays affect delivery commitments to customers. How would you manage communication and negotiations to preserve the business relationship?'
+                ]
+            ],
+            [
+                'judul' => 'SCENARIO 4: PRICE WAR & OVERSTOCK CRISIS',
+                'deskripsi' => "PT Moda Global imported a massive shipment of fabric from China anticipating a seasonal demand surge. However, market demand suddenly dropped, and local competitors engaged in aggressive price-slashing far below your import cost. Consequently, inventory is stuck in warehouses, company cash flow is completely frozen due to capital locked in unsold goods, and USD-denominated foreign supplier debts are maturing shortly.",
+                'pertanyaan' => [
+                    '1. Sales targets have become difficult to achieve, and team motivation is declining. How would you manage team performance under these circumstances?',
+                    '2. Inventory continues to increase while company obligations are approaching maturity. How would you evaluate the financial situation and determine the appropriate course of action?',
+                    '3. The company is considering several options to reduce inventory losses. How would you ensure that each decision remains compliant with applicable tax regulations?',
+                    '4. The company needs to reduce excess inventory without damaging brand value. How would you develop a marketing strategy to achieve this objective?',
+                    '5. The company faces simultaneous pressure from suppliers and customers. How would you prioritize and manage negotiations to keep business operations running effectively?'
+                ]
+            ]
+        ];
+
+        foreach ($khususScenarios as $sk) {
+            $dataToInsert[] = [
+                'posisi' => 'Khusus',
+                'tipe' => 'studi_kasus',
+                'judul' => $sk['judul'],
+                'deskripsi' => $sk['deskripsi'],
+                'pertanyaan' => json_encode($sk['pertanyaan'])
+            ];
+        }
+
+        // 4. Process positions from lang/id_sesi5.json
+        $alreadyAdded = ['IT STAFF', 'ADMIN MARKETING & SOSMED', 'Khusus'];
 
         foreach ($sesi5Data as $posisi => $content) {
             if (in_array($posisi, $alreadyAdded)) {
@@ -177,20 +235,15 @@ class BankSoalSesi5Seeder extends Seeder
             }
         }
 
-        // Safely update or insert into bank_soal_sesi5 so custom positions/questions on production are NOT deleted
-        DB::transaction(function() use ($dataToInsert) {
-            foreach ($dataToInsert as $row) {
-                DB::table('bank_soal_sesi5')->updateOrInsert(
-                    [
-                        'posisi' => $row['posisi'],
-                        'tipe' => $row['tipe'],
-                        'judul' => $row['judul']
-                    ],
-                    [
-                        'deskripsi' => $row['deskripsi'],
-                        'pertanyaan' => $row['pertanyaan']
-                    ]
-                );
+        // Safely re-seed questions for official positions only, eliminating legacy duplicate English questions
+        DB::transaction(function() use ($dataToInsert, $uniquePosisi) {
+            // Delete existing questions only for the positions we are re-seeding
+            // This cleanly removes old English duplicates without affecting any custom positions created in production
+            DB::table('bank_soal_sesi5')->whereIn('posisi', $uniquePosisi)->delete();
+
+            // Insert fresh verified questions in chunks
+            foreach (array_chunk($dataToInsert, 50) as $chunk) {
+                DB::table('bank_soal_sesi5')->insert($chunk);
             }
         });
     }
