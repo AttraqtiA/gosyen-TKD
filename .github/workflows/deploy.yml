@@ -24,7 +24,8 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            cd ~/public_html
+            set -e
+            cd ~/domains/test.gosyenpolinator.com/public_html
             echo "🔄 Pulling latest changes from Git..."
             git pull origin main
 
@@ -38,6 +39,7 @@ jobs:
             php artisan db:seed --class=BankSoalSesi5Seeder --force
 
             echo "🧹 Clearing and Caching Configurations..."
+            php artisan view:clear
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
