@@ -1,86 +1,154 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ App::getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="color-scheme" content="light dark">
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('color-scheme');
+                var meta = document.querySelector('meta[name="color-scheme"]');
+                if (meta && (saved === 'light' || saved === 'dark')) {
+                    meta.content = saved;
+                    document.documentElement.setAttribute('data-theme', saved);
+                    document.documentElement.setAttribute('data-bs-theme', saved);
+                } else {
+                    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <meta name="theme-color" content="#1d4ed8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Psikotes">
     
-    <title>@yield('title', 'Portal Ujian Psikologi')</title>
+    <title>@yield('title', 'Portal Ujian Psikologi') — Gosyen Assessment</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ asset('assets/icon-192.png') }}">
+    <link rel="icon" href="https://gosyenpolinator.com/images/gosyen_logo.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #06b6d4;
-            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --dark: #111827; --gray: #6b7280; --light: #f9fafb;
-            --border: #e5e7eb; --card: rgba(255,255,255,0.95);
+            color-scheme: light dark;
+            --primary: #1d4ed8; --primary-dark: #1e40af; --secondary: #0284c7;
+            --success: #059669; --danger: #dc2626; --warning: #d97706;
+            --dark: #0f172a; --gray: #64748b; --light: #f8fafc;
+            --bg-canvas: #f1f5f9;
+            --bg-surface: #ffffff;
+            --bg-subtle: #f8fafc;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --hero-text: #0f172a;
+            --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.05);
         }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --primary: #3b82f6; --primary-dark: #2563eb; --secondary: #0ea5e9;
+                --dark: #f8fafc; --gray: #94a3b8; --light: #1e293b;
+                --bg-canvas: #0b1120;
+                --bg-surface: #111827;
+                --bg-subtle: #1e293b;
+                --border: #1e293b;
+                --border-strong: #334155;
+                --card: #111827;
+                --text-primary: #f8fafc;
+                --text-secondary: #cbd5e1;
+                --text-muted: #94a3b8;
+                --hero-text: #f8fafc;
+                --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+            }
+        }
+
+        :root:has(> head > meta[name="color-scheme"][content="dark"]),
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+            --primary: #3b82f6; --primary-dark: #2563eb; --secondary: #0ea5e9;
+            --dark: #f8fafc; --gray: #94a3b8; --light: #1e293b;
+            --bg-canvas: #0b1120;
+            --bg-surface: #111827;
+            --bg-subtle: #1e293b;
+            --border: #1e293b;
+            --border-strong: #334155;
+            --card: #111827;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --hero-text: #f8fafc;
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f172a, #1e293b, #312e81);
-            min-height: 100vh; color: var(--dark); padding: 30px;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-canvas);
+            min-height: 100vh; color: var(--text-primary); padding: 28px;
             overscroll-behavior-y: contain;
             -ms-overflow-style: none; scrollbar-width: none;
         }
         body::-webkit-scrollbar { width: 0; height: 0; }
         
-        .main-wrapper { max-width: 1200px; margin: auto; }
-        .hero { text-align: center; color: white; margin-bottom: 30px; }
-        .hero h1 { font-size: 38px; margin-bottom: 10px; font-weight: 700; }
-        .hero p { opacity: 0.9; font-size: 16px; }
+        .main-wrapper { max-width: 1200px; margin: auto; padding-top: 24px; }
+        .hero { text-align: center; color: var(--hero-text); margin-bottom: 28px; }
+        .hero h1 { font-size: 32px; margin-bottom: 8px; font-weight: 800; letter-spacing: -0.5px; }
+        .hero p { color: var(--text-muted); font-size: 15px; }
         
-        .layout { display: grid; grid-template-columns: 320px 1fr; gap: 25px; align-items: start; }
+        .layout { display: grid; grid-template-columns: 310px 1fr; gap: 24px; align-items: start; }
         .sidebar, .content {
-            background: var(--card); backdrop-filter: blur(14px);
-            border-radius: 24px; padding: 25px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px;
+            box-shadow: var(--shadow-card);
         }
         .sidebar { position: sticky; top: 20px; }
-        .logo-box { text-align: center; margin-bottom: 25px; }
-        .logo-box img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 10px; }
+        .logo-box { text-align: center; margin-bottom: 22px; }
+        .logo-box img { width: 76px; height: 76px; object-fit: contain; margin-bottom: 10px; }
         
         .badge-custom {
-            display: inline-block; background: rgba(79,70,229,0.1);
-            color: var(--primary); padding: 8px 16px;
-            border-radius: 999px; font-size: 13px; font-weight: 600;
+            display: inline-block; background: rgba(37,99,235,0.12);
+            color: var(--primary); padding: 6px 14px;
+            border-radius: 999px; font-size: 12.5px; font-weight: 700;
         }
         .info-card {
-            background: #f8fafc; border: 1px solid var(--border);
-            border-radius: 18px; padding: 18px; margin-bottom: 16px;
+            background: var(--bg-subtle); border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px; margin-bottom: 16px;
         }
-        .info-card h3 { font-size: 15px; margin-bottom: 10px; color: var(--primary); }
-        .info-card p, .info-card li { font-size: 14px; line-height: 1.7; color: #374151; }
+        .info-card h3 { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+        .info-card p, .info-card li { font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); }
         .info-card ul { padding-left: 18px; }
         
         .timer-box {
             background: linear-gradient(135deg, var(--danger), #991b1b);
-            color: white; text-align: center; padding: 18px;
-            border-radius: 18px; margin-top: 15px;
-            box-shadow: 0 10px 20px rgba(239,68,68,0.25);
+            color: white; text-align: center; padding: 16px;
+            border-radius: 14px; margin-top: 14px;
+            box-shadow: 0 6px 18px rgba(220,38,38,0.2);
         }
-        .timer-box p { margin: 0; font-size: 14px; opacity: 0.9; }
-        .timer-box h2 { font-size: 34px; margin-top: 5px; margin-bottom: 0; letter-spacing: 2px; font-weight: 700; }
+        .timer-box p { margin: 0; font-size: 13px; opacity: 0.9; }
+        .timer-box h2 { font-size: 32px; margin-top: 4px; margin-bottom: 0; letter-spacing: 2px; font-weight: 800; font-variant-numeric: tabular-nums; }
         
-        .progress-wrapper { margin-top: 20px; }
+        .progress-wrapper { margin-top: 18px; }
         .progress-header {
             display: flex; justify-content: space-between;
-            margin-bottom: 10px; font-size: 14px; font-weight: 600;
-            color: #4b5563;
+            margin-bottom: 8px; font-size: 13.5px; font-weight: 600;
+            color: var(--text-secondary);
         }
         .progress-track {
-            width: 100%; height: 18px; background: #e5e7eb;
+            width: 100%; height: 12px; background: var(--bg-subtle);
+            border: 1px solid var(--border);
             border-radius: 999px; overflow: hidden;
         }
         .progress-fill {
@@ -90,79 +158,81 @@
         }
         
         .question-card {
-            border: 1px solid var(--border); border-radius: 22px;
-            padding: 24px; margin-bottom: 22px; transition: all 0.3s ease;
-            background: white; opacity: 0; transform: translateY(20px);
-            animation: fadeInUp 0.4s ease forwards;
+            border: 1px solid var(--border); border-radius: 14px;
+            padding: 22px; margin-bottom: 18px; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: var(--bg-surface); opacity: 0; transform: translateY(14px);
+            animation: fadeInUp 0.35s ease forwards;
         }
         @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
         
-        .question-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+        .question-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-card); }
         .question-number {
-            width: 45px; height: 45px; border-radius: 50%;
+            width: 38px; height: 38px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; font-weight: bold; margin-bottom: 15px;
+            background: var(--primary);
+            color: white; font-weight: 700; font-size: 14px; margin-bottom: 14px;
         }
         .question-text {
-            font-size: 15px; font-weight: 500; margin-bottom: 18px;
-            color: var(--dark); line-height: 1.6;
+            font-size: 15px; font-weight: 500; margin-bottom: 16px;
+            color: var(--text-primary); line-height: 1.6;
         }
         
         /* Option inputs styling */
-        .option { margin-bottom: 12px; }
+        .option { margin-bottom: 10px; }
         .option input[type="radio"], .option input[type="checkbox"] { display: none; }
         .option label {
-            display: flex; align-items: center; gap: 12px; padding: 15px;
-            border-radius: 16px; border: 1px solid var(--border);
-            cursor: pointer; transition: all 0.25s ease;
-            font-size: 15px; font-weight: 500;
-            color: var(--dark);
+            display: flex; align-items: center; gap: 12px; padding: 13px 15px;
+            border-radius: 12px; border: 1px solid var(--border-strong);
+            cursor: pointer; transition: all 0.2s ease;
+            font-size: 14.5px; font-weight: 500;
+            color: var(--text-primary);
+            background: var(--bg-surface);
             width: 100%; margin-bottom: 0;
         }
-        .option label:hover { background: #eef2ff; border-color: var(--primary); }
+        .option label:hover { background: var(--bg-subtle); border-color: var(--primary); }
         .option input:checked + label {
-            background: linear-gradient(135deg, rgba(79,70,229,0.12), rgba(6,182,212,0.12));
-            border-color: var(--primary); color: var(--primary-dark); font-weight: 600;
+            background: rgba(37, 99, 235, 0.1);
+            border-color: var(--primary); color: var(--primary); font-weight: 600;
         }
         .option-badge {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: #f3f4f6; display: flex; align-items: center;
-            justify-content: center; font-weight: bold;
-            color: #4b5563;
+            width: 32px; height: 32px; border-radius: 8px;
+            background: var(--bg-subtle); border: 1px solid var(--border); display: flex; align-items: center;
+            justify-content: center; font-weight: 700; font-size: 13px;
+            color: var(--text-secondary); flex-shrink: 0;
         }
         .option input:checked + label .option-badge {
             background: var(--primary);
+            border-color: var(--primary);
             color: white;
         }
         
         .submit-btn {
-            width: 100%; padding: 18px; border: none; border-radius: 18px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; font-size: 16px; font-weight: 700;
-            cursor: pointer; transition: all 0.3s ease; margin-top: 10px;
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            background: var(--primary);
+            color: white; font-size: 15.5px; font-weight: 700;
+            cursor: pointer; transition: background-color 0.2s ease; margin-top: 10px;
         }
-        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 24px rgba(79,70,229,0.25); }
+        .submit-btn:hover { background: var(--primary-dark); }
         
         .warning-box {
-            background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3);
-            color: #92400e; padding: 16px; border-radius: 16px;
-            margin-bottom: 20px; line-height: 1.8; font-size: 14px;
+            background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35);
+            color: var(--warning); padding: 16px; border-radius: 12px;
+            margin-bottom: 20px; line-height: 1.7; font-size: 14px;
         }
         .agreement {
             display: flex; gap: 12px; align-items: flex-start;
-            margin-top: 18px; background: #f9fafb;
-            padding: 15px; border-radius: 14px;
-            color: #4b5563;
+            margin-top: 18px; background: var(--bg-subtle); border: 1px solid var(--border);
+            padding: 15px; border-radius: 12px;
+            color: var(--text-secondary);
         }
-        .agreement input { transform: scale(1.3); margin-top: 4px; }
+        .agreement input { transform: scale(1.25); margin-top: 4px; }
         
         .start-btn {
-            margin-top: 18px; width: 100%; padding: 16px; border: none;
-            border-radius: 16px; background: linear-gradient(135deg, #16a34a, #059669);
-            color: white; font-weight: 700; cursor: pointer; transition: 0.3s;
+            margin-top: 18px; width: 100%; padding: 15px; border: none;
+            border-radius: 12px; background: var(--success);
+            color: white; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
         }
-        .start-btn:hover { transform: translateY(-2px); }
+        .start-btn:hover { opacity: 0.92; }
         
         .hidden { display: none !important; }
         @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
@@ -236,39 +306,122 @@
             .sidebar, .content { padding: 18px; border-radius: 20px; }
         }
         
-        .language-switcher {
+        .utility-bar {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 16px;
+            right: 16px;
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 5px;
-            border-radius: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            backdrop-filter: blur(5px);
             display: flex;
-            gap: 5px;
+            align-items: center;
+            gap: 8px;
+        }
+        .language-switcher {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            padding: 4px;
+            border-radius: 999px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         .language-switcher a {
             text-decoration: none;
-            color: #4b5563;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
+            color: var(--text-secondary);
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .language-switcher a:hover {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
         }
         .language-switcher a.active {
             background: var(--primary);
-            color: white;
+            color: #ffffff;
+        }
+        .flag-svg {
+            width: 18px;
+            height: 13px;
+            border-radius: 2px;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+            flex-shrink: 0;
+        }
+        .theme-toggle-pill {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-card);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .theme-toggle-pill:hover {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+        .theme-toggle-pill .icon-sun { display: none; }
+        .theme-toggle-pill .icon-moon { display: block; }
+        :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-pill .icon-sun,
+        :root[data-theme="dark"] .theme-toggle-pill .icon-sun { display: block; }
+        :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-pill .icon-moon,
+        :root[data-theme="dark"] .theme-toggle-pill .icon-moon { display: none; }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .theme-toggle-pill .icon-sun { display: block; }
+            :root:not([data-theme="light"]) .theme-toggle-pill .icon-moon { display: none; }
         }
     </style>
     @yield('styles')
 </head>
 <body>
-    <div class="language-switcher">
-        <a href="{{ route('lang.switch', 'id') }}" class="{{ App::getLocale() == 'id' ? 'active' : '' }}">ID</a>
-        <a href="{{ route('lang.switch', 'en') }}" class="{{ App::getLocale() == 'en' ? 'active' : '' }}">EN</a>
+    <div class="utility-bar">
+        <div class="language-switcher" role="group" aria-label="Pilih Bahasa">
+            <a href="{{ route('lang.switch', 'id') }}"
+               class="{{ App::getLocale() == 'id' ? 'active' : '' }}"
+               aria-label="Bahasa Indonesia"
+               @if(App::getLocale() == 'id') aria-current="true" @endif>
+                <svg class="flag-svg" viewBox="0 0 3 2" aria-hidden="true">
+                    <rect width="3" height="1" y="0" fill="#CE1126"/>
+                    <rect width="3" height="1" y="1" fill="#FFFFFF"/>
+                </svg>
+                <span>ID</span>
+            </a>
+            <a href="{{ route('lang.switch', 'en') }}"
+               class="{{ App::getLocale() == 'en' ? 'active' : '' }}"
+               aria-label="English"
+               @if(App::getLocale() == 'en') aria-current="true" @endif>
+                <svg class="flag-svg" viewBox="0 0 60 30" aria-hidden="true">
+                    <clipPath id="uk-clip"><rect width="60" height="30"/></clipPath>
+                    <g clip-path="url(#uk-clip)">
+                        <rect width="60" height="30" fill="#012169"/>
+                        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+                        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" stroke-width="2"/>
+                        <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+                        <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
+                    </g>
+                </svg>
+                <span>EN</span>
+            </a>
+        </div>
+
+        <button type="button" class="theme-toggle-pill" id="ujianThemeToggle" aria-label="Ganti Tema Terang/Gelap" title="Ganti Tema (Terang / Gelap)">
+            <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+        </button>
     </div>
 
     @yield('content')
@@ -551,6 +704,52 @@
                 triggerFreeze();
             });
         });
+
+        (function () {
+            var btn = document.getElementById('ujianThemeToggle');
+            var meta = document.querySelector('meta[name="color-scheme"]');
+            var mql = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function applyScheme(scheme) {
+                if (scheme === 'light' || scheme === 'dark') {
+                    if (meta) meta.content = scheme;
+                    document.documentElement.setAttribute('data-theme', scheme);
+                    document.documentElement.setAttribute('data-bs-theme', scheme);
+                } else {
+                    if (meta) meta.content = 'light dark';
+                    document.documentElement.removeAttribute('data-theme');
+                    document.documentElement.setAttribute('data-bs-theme', mql.matches ? 'dark' : 'light');
+                }
+            }
+
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    var stored = null;
+                    try { stored = localStorage.getItem('color-scheme'); } catch (e) {}
+                    var current = stored || (mql.matches ? 'dark' : 'light');
+                    var target = current === 'dark' ? 'light' : 'dark';
+                    var sysTheme = mql.matches ? 'dark' : 'light';
+
+                    try {
+                        if (target === sysTheme) {
+                            localStorage.removeItem('color-scheme');
+                            applyScheme(null);
+                        } else {
+                            localStorage.setItem('color-scheme', target);
+                            applyScheme(target);
+                        }
+                    } catch (e) {
+                        applyScheme(target);
+                    }
+                });
+            }
+
+            window.addEventListener('storage', function (e) {
+                if (e.key === 'color-scheme') {
+                    applyScheme(e.newValue);
+                }
+            });
+        })();
     </script>
     @yield('scripts')
 </body>

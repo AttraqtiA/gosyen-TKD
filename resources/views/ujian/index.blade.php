@@ -3,12 +3,7 @@
 @section('title', 'Portal Ujian Psikologi')
 
 @section('styles')
-<link rel="icon" href="https://gosyenpolinator.com/images/gosyen_logo.png">
 <style>
-    .logo-icon svg {
-    width: 60px;
-    height: 60px;
-    }
     body {
         display: flex;
         align-items: center;
@@ -16,66 +11,93 @@
         padding: 16px;
     }
     .card-login {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(14px);
-        border-radius: 24px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow-card);
         width: 100%;
-        max-width: 450px;
-        padding: 35px 28px;
-        animation: fadeInUp 0.4s ease-out;
+        max-width: 460px;
+        padding: 36px 30px;
+        animation: fadeInUp 0.35s ease-out;
     }
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
+        from { opacity: 0; transform: translateY(14px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .logo-icon {
-        width: 72px;
-        height: 72px;
-        background: #e3f2fd;
-        color: #0d6efd;
-        border-radius: 50%;
+        width: 68px;
+        height: 68px;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border);
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto 16px;
-        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.15);
+        padding: 10px;
     }
-    .form-floating input, .form-floating select {
-        border-radius: 12px;
-        border: 1px solid #dee2e6;
-        font-size: 15px;
+    .logo-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
-    .form-floating input:focus, .form-floating select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    .portal-dropdown-btn {
+        border-radius: 10px !important;
+        height: 54px;
+        font-size: 14.5px;
+        border: 1px solid var(--border-strong) !important;
+        color: var(--text-primary) !important;
+        background: var(--bg-surface) !important;
+        padding: 0 16px !important;
+        font-weight: 500;
+    }
+    .portal-dropdown-menu {
+        border-radius: 12px !important;
+        box-shadow: var(--shadow-card) !important;
+        border: 1px solid var(--border) !important;
+        background: var(--bg-surface) !important;
+        padding: 6px 0 !important;
+    }
+    .portal-dropdown-menu .dropdown-item {
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    .portal-dropdown-menu .dropdown-item:hover {
+        background: var(--bg-subtle);
+    }
+    .form-floating .form-control {
+        border-radius: 10px;
+        border: 1px solid var(--border-strong);
+        background-color: var(--bg-surface);
+        color: var(--text-primary);
+        font-size: 14.5px;
+    }
+    .form-floating .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
     }
     .btn-mulai {
-        border-radius: 12px;
-        padding: 14px;
-        font-weight: 600;
-        font-size: 16px;
-        letter-spacing: 0.5px;
-        transition: all 0.3s ease;
+        border-radius: 10px;
+        padding: 13px;
+        font-weight: 700;
+        font-size: 15px;
+        transition: background-color 0.2s ease;
         min-height: 48px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        background: var(--primary);
         border: none;
+        color: #ffffff;
     }
     .btn-mulai:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-    }
-    .btn-mulai:active {
-        transform: scale(0.98);
+        background: var(--primary-dark);
+        color: #ffffff;
     }
     .form-text-custom {
-        font-size: 13px;
-        color: #6c757d;
+        font-size: 12.5px;
+        color: var(--text-muted);
         text-align: center;
-        margin-top: 20px;
-        line-height: 1.4;
+        margin-top: 18px;
+        line-height: 1.5;
     }
-    /* Class helper untuk menyembunyikan elemen */
     .hidden {
         display: none !important;
     }
@@ -85,38 +107,11 @@
 @section('content')
 <div class="card-login">
     <div class="logo-icon">
-        <svg id="fi_2930735" enable-background="new 0 0 512 512" height="512" viewBox="0 0 512 512" width="512" xmlns="http://www.w3.org/2000/svg">
-            <g>
-                <path d="m330.8 466.74h-149.6l12.6-72.8h124.4z" fill="#aac2cc"></path>
-                <path d="m330.8 466.74h-30l-12.6-72.8h30z" fill="#86a0a8"></path>
-                <path d="m512 61.47v308.76c0 17.21-14 31.21-31.21 31.21h-449.58c-15.08 0-27.7-10.75-30.58-25-.42-2-.63-4.08-.63-6.21v-308.76c0-17.21 14-31.21 31.21-31.21h449.58c17.21 0 31.21 14 31.21 31.21z" fill="#e1f9ff"></path>
-                <path d="m512 61.47v308.76c0 17.21-14 31.21-31.21 31.21h-449.58c-15.08 0-27.7-10.75-30.58-25h455.16c17.24 0 31.21-13.97 31.21-31.21v-283.76c0-17.24-13.97-31.21-31.21-31.21h25c17.21 0 31.21 14 31.21 31.21z" fill="#c2e8ef"></path>
-                <path d="m512 353.94v16.29c0 17.21-14 31.21-31.21 31.21h-449.58c-15.08 0-27.7-10.75-30.58-25-.42-2-.63-4.08-.63-6.21v-16.29z" fill="#4a555b"></path>
-                <path d="m485.77 353.94h26.23v16.29c0 17.21-14 31.21-31.21 31.21h-449.58c-15.08 0-27.7-10.75-30.58-25h455.16c14.21 0 26.21-9.5 29.98-22.5z" fill="#2d383d"></path>
-                <path d="m459.971 266.807h-25.851l-21.716-42.684c-1.28-2.515-3.863-4.099-6.685-4.099s-5.405 1.584-6.685 4.099l-35.394 69.565-29.868-58.705c-1.28-2.515-3.863-4.099-6.685-4.099s-5.405 1.584-6.685 4.099l-16.191 31.823h-25.851c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h30.45c2.822 0 5.405-1.584 6.685-4.099l11.592-22.783 29.868 58.705c1.28 2.515 3.863 4.099 6.685 4.099s5.405-1.584 6.685-4.099l35.394-69.565 17.117 33.644c1.28 2.515 3.863 4.099 6.685 4.099h30.45c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5z" fill="#2cdddd"></path>
-                <g>
-                    <path d="m317.282 106.353h-38.919c-2.761 0-5 2.239-5 5v78.954c0 2.761 2.239 5 5 5h38.919c2.761 0 5-2.239 5-5v-78.954c0-2.761-2.239-5-5-5z" fill="#ffd85c"></path>
-                    <path d="m388.891 127.808h-38.919c-2.761 0-5 2.239-5 5v57.5c0 2.761 2.239 5 5 5h38.919c2.761 0 5-2.239 5-5v-57.5c0-2.761-2.239-5-5-5z" fill="#ff6248"></path>
-                    <path d="m459.971 86.558h-38.919c-2.761 0-5 2.239-5 5v98.749c0 2.761 2.239 5 5 5h38.919c2.761 0 5-2.239 5-5v-98.749c0-2.761-2.239-5-5-5z" fill="#2cdddd"></path>
-                </g>
-                <path d="m348.203 451.74h-184.405c-8.284 0-15 6.716-15 15 0 8.284 6.716 15 15 15h184.406c8.284 0 15-6.716 15-15-.001-8.285-6.716-15-15.001-15z" fill="#c2e8ef"></path>
-                <g fill="#aac2cc">
-                    <path d="m221.898 168.9h-170c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h170c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5z"></path>
-                    <path d="m51.898 223.741h30.422c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5h-30.422c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5z"></path>
-                    <path d="m221.898 208.741h-105.213c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h105.213c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5z"></path>
-                    <path d="m51.898 99.058h170c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5h-170c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5z"></path>
-                    <path d="m51.898 138.9h105.422c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5h-105.422c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5z"></path>
-                    <path d="m221.898 123.9h-30.213c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h30.213c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5z"></path>
-                    <path d="m221.898 248.099h-170c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h170c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5z"></path>
-                    <path d="m131.898 287.729h-80c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h80c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5z"></path>
-                </g>
-                <path d="m363.203 466.74c0 8.28-6.72 15-15 15h-30c8.28 0 15-6.72 15-15 0-8.29-6.72-15-15-15h30c8.28 0 15 6.71 15 15z" fill="#9dcfd6"></path>
-            </g>
-        </svg>
+        <img src="https://gosyenpolinator.com/images/gosyen_logo.png" alt="Gosyen Logo">
     </div>
     
-    <h3 class="text-center fw-bold mb-1" style="color: #2b3452; font-size: 1.25rem;">{{ __('Portal Ujian Kompetensi') }}</h3>
-    <p class="text-center text-muted mb-4" style="font-size: 14px;">{{ __('Silakan lengkapi data diri Anda sebelum memulai ujian.') }}</p>
+    <h3 class="text-center fw-bold mb-1" style="color: var(--text-primary); font-size: 1.25rem;">{{ __('Portal Ujian Kompetensi') }}</h3>
+    <p class="text-center mb-4" style="color: var(--text-muted); font-size: 13.5px;">{{ __('Silakan lengkapi data diri Anda sebelum memulai ujian.') }}</p>
 
     @if ($errors->any())
         <div class="alert alert-danger mb-3" style="border-radius: 12px; font-size: 14px;">
@@ -132,11 +127,11 @@
         @csrf
         <!-- Dropdown Perusahaan -->
         <div class="dropdown mb-3">
-            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" type="button" id="perusahaanDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 12px; height: 58px; font-size: 15px; border: 1px solid #dee2e6; color: #212529; background: white; padding: 0 16px; font-weight: 400; box-shadow: none;">
+            <button class="btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center portal-dropdown-btn" type="button" id="perusahaanDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <span id="perusahaanSelectedText">{{ __('-- Pilih Perusahaan --') }}</span>
             </button>
             
-            <ul class="dropdown-menu w-100" aria-labelledby="perusahaanDropdown" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #dee2e6; padding: 6px 0;">
+            <ul class="dropdown-menu w-100 portal-dropdown-menu" aria-labelledby="perusahaanDropdown">
                 @foreach($perusahaanList as $per)
                 <li><button class="dropdown-item py-2 perusahaan-item" type="button" data-value="{{ $per->nama }}" data-perusahaan-id="{{ $per->id ?? '' }}">{{ $per->nama }}</button></li>
                 @endforeach
@@ -152,13 +147,13 @@
 
         <!-- Dropdown Posisi -->
         <div class="dropdown mb-3">
-            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" type="button" id="posisiDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 12px; height: 58px; font-size: 15px; border: 1px solid #dee2e6; color: #212529; background: white; padding: 0 16px; font-weight: 400; box-shadow: none;">
+            <button class="btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center portal-dropdown-btn" type="button" id="posisiDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <span id="posisiSelectedText">{{ __('-- Pilih Posisi Pekerjaan --') }}</span>
             </button>
             
-            <ul class="dropdown-menu w-100" aria-labelledby="posisiDropdown" style="max-height: 260px; overflow-y: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #dee2e6; padding-top: 0;">
-                <li class="p-2 sticky-top bg-white" style="border-bottom: 1px solid #dee2e6; z-index: 2;">
-                    <input type="text" id="searchPosisi" class="form-control form-control-sm" placeholder="{{ __('Cari posisi pekerjaan...') }}" autocomplete="off" style="border-radius: 8px;">
+            <ul class="dropdown-menu w-100 portal-dropdown-menu" aria-labelledby="posisiDropdown" style="max-height: 260px; overflow-y: auto; padding-top: 0;">
+                <li class="p-2 sticky-top" style="background: var(--bg-surface); border-bottom: 1px solid var(--border); z-index: 2;">
+                    <input type="text" id="searchPosisi" class="form-control form-control-sm" placeholder="{{ __('Cari posisi pekerjaan...') }}" autocomplete="off" style="border-radius: 8px; background: var(--bg-subtle); color: var(--text-primary); border-color: var(--border-strong);">
                 </li>
                 
                 @foreach($posisiList as $p)
@@ -222,11 +217,17 @@
 
         function filterPosisiByPerusahaan() {
             const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let currentValid = false;
             positionsList.forEach(item => {
                 const text = item.innerText.toLowerCase();
+                const val = item.getAttribute('data-value');
                 const itemPerusahaanId = item.getAttribute('data-perusahaan-id') || '';
                 const matchesCompany = !selectedPerusahaanId || !itemPerusahaanId || itemPerusahaanId === selectedPerusahaanId;
                 const matchesSearch = text.includes(term);
+
+                if (matchesCompany && val === posisiInput.value) {
+                    currentValid = true;
+                }
 
                 if (matchesCompany && matchesSearch) {
                     item.parentElement.style.display = 'block';
@@ -234,6 +235,12 @@
                     item.parentElement.style.display = 'none';
                 }
             });
+
+            if (posisiInput.value && !currentValid) {
+                posisiInput.value = '';
+                positionsText.innerText = "{{ __('-- Pilih Posisi Pekerjaan --') }}";
+                togglePosisiLainnya();
+            }
         }
 
         perusahaanList.forEach(item => {

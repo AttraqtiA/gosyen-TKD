@@ -72,7 +72,13 @@ class DashboardController extends Controller
             return view('dashboard.index', compact('role', 'peserta', 'posisiList', 'perusahaanList', 'tgl_awal', 'tgl_akhir', 'search_nama', 'selected_posisi', 'selected_perusahaan'));
         }
 
-        return view('dashboard.index', compact('role'));
+        $adminStats = [
+            'perusahaan' => \Illuminate\Support\Facades\Schema::hasTable('perusahaan') ? \App\Models\Perusahaan::count() : 0,
+            'posisi' => \Illuminate\Support\Facades\Schema::hasTable('posisi') ? \App\Models\Posisi::count() : 0,
+            'soal_sesi5' => \Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5') ? DB::table('bank_soal_sesi5')->count() : 0,
+        ];
+
+        return view('dashboard.index', compact('role', 'adminStats'));
     }
 
     public function updatePin(Request $request)

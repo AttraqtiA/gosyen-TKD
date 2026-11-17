@@ -1,526 +1,473 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard {{ ucfirst($role) }} - Portal Psikotes</title>
-    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" href="https://gosyenpolinator.com/images/gosyen_logo.png">
-    <style>
-        :root {
-            --bg-dark: #090d16;
-            --card-bg: #0f172a;
-            --card-border: #1e293b;
-            --input-bg: #1e293b;
-            --input-border: #334155;
-            --text-main: #f8fafc;
-            --text-label: #e2e8f0;
-            --text-muted: #94a3b8;
-            --accent-blue: #3b82f6;
-        }
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-        }
-        .text-muted {
-            color: var(--text-muted) !important;
-        }
-        .text-slate-300 { color: #cbd5e1 !important; }
-        .text-slate-400 { color: #94a3b8 !important; }
-        .navbar {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            background-color: #0b1329 !important;
-            border-bottom: 1px solid #1e293b;
-            padding: 14px 0;
-        }
-        .navbar-brand {
-            font-weight: 800;
-            letter-spacing: -0.3px;
-        }
-        .card-custom {
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            background: var(--card-bg);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        /* Form Label Visibility Fix */
-        .filter-label {
-            color: var(--text-label) !important;
-            font-weight: 700 !important;
-            font-size: 13px !important;
-            margin-bottom: 8px;
-            letter-spacing: 0.2px;
-            display: block;
-        }
-        .form-control-custom, .form-select-custom {
-            background-color: var(--input-bg) !important;
-            border: 1px solid var(--input-border) !important;
-            color: #ffffff !important;
-            border-radius: 10px !important;
-            padding: 10px 14px !important;
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            transition: all 0.2s ease;
-        }
-        .form-control-custom::placeholder {
-            color: #64748b !important;
-        }
-        .form-control-custom:focus, .form-select-custom:focus {
-            border-color: var(--accent-blue) !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
-        }
-        /* Custom Chrome/Edge Date Picker Color Fix */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            opacity: 0.8;
-            cursor: pointer;
-        }
-        .btn-filter {
-            background-color: #2563eb;
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-weight: 700;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-        .btn-filter:hover {
-            background-color: #1d4ed8;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-        }
-        .btn-reset {
-            background-color: transparent;
-            color: #94a3b8;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 10px 18px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            text-decoration: none;
-        }
-        .btn-reset:hover {
-            background-color: #1e293b;
-            color: #f8fafc;
-            border-color: #475569;
-        }
-        .btn-excel {
-            background-color: #10b981;
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-weight: 700;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-excel:hover {
-            background-color: #059669;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-        .btn-pdf {
-            background-color: #dc2626;
-            color: #ffffff;
-            border: none;
-            border-radius: 8px;
-            padding: 7px 14px;
-            font-size: 12px;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
-        }
-        .btn-pdf:hover {
-            background-color: #b91c1c;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(220, 38, 38, 0.5);
-        }
-        .table-responsive {
-            border-radius: 12px;
-            border: 1px solid var(--card-border);
-            overflow-x: auto;
-        }
-        .excel-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            color: #e2e8f0;
-            margin: 0;
-        }
-        .excel-table th {
-            background-color: #162032;
-            color: #cbd5e1;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-            padding: 13px 14px;
-            border-bottom: 2px solid #334155;
-            white-space: nowrap;
-        }
-        .excel-table td {
-            padding: 13px 14px;
-            border-bottom: 1px solid #1e293b;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-        .excel-table tbody tr:hover {
-            background-color: rgba(30, 41, 59, 0.6);
-        }
-        .badge-status {
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            display: inline-block;
-        }
-        .bg-rec-green { background-color: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-        .bg-rec-yellow { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-        .bg-rec-orange { background-color: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
-        .bg-rec-red { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-    </style>
-</head>
-<body>
+@extends('layouts.admin')
 
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand text-white d-flex align-items-center gap-2" href="{{ route('dashboard.index') }}">
-                <img src="https://gosyenpolinator.com/images/gosyen_logo.png" width="32" height="32" class="d-inline-block align-top" alt="Logo">
-                <span>Dashboard Psikologi IST</span>
-            </a>
-            
-            @if ($role == 'admin')
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="adminNavbar">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-3 gap-1">
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold px-3 py-1.5" href="{{ route('dashboard.posisi') }}">Kelola Posisi</a></li>
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold px-3 py-1.5" href="{{ route('dashboard.sesi1') }}">Sesi 1 (WA)</a></li>
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold px-3 py-1.5" href="{{ route('dashboard.sesi2') }}">Sesi 2 (AN)</a></li>
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold px-3 py-1.5" href="{{ route('dashboard.sesi3') }}">Sesi 3 (ZR)</a></li>
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold px-3 py-1.5" href="{{ route('dashboard.sesi4') }}">Sesi 4 (FA)</a></li>
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold px-3 py-1.5" href="{{ route('dashboard.sesi5') }}">Sesi 5 (Essay)</a></li>
-                </ul>
-            </div>
-            @endif
-            
-            <!-- Navbar Role Visibility Fix -->
-            <div class="d-flex align-items-center gap-3">
-                <div class="d-flex align-items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-pill border border-slate-700">
-                    <span class="text-slate-300 fw-semibold" style="font-size: 13px;">Role:</span>
-                    <span class="badge bg-emerald-500 text-white font-bold px-2.5 py-1" style="font-size: 12px; letter-spacing: 0.5px;">{{ ucfirst($role) }}</span>
-                </div>
-                <a href="{{ route('logout') }}" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-bold" style="border-radius: 8px;">Keluar</a>
+@section('title', 'Dashboard ' . ucfirst($role))
+
+@section('styles')
+<style>
+    .module-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px;
+        border-radius: 12px;
+        background-color: var(--bg-surface-subtle);
+        border: 1px solid var(--border-subtle);
+        text-decoration: none;
+        transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        height: 100%;
+    }
+    .module-card:hover {
+        border-color: var(--brand-primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card);
+    }
+    .module-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+    }
+    .stat-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+    .stat-label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+    .filter-label {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 12.5px;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .table-wrapper {
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        overflow: auto;
+        max-height: 70vh;
+    }
+    .excel-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+        margin: 0;
+    }
+    .excel-table th {
+        background-color: var(--bg-table-head);
+        color: var(--text-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-strong);
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    .excel-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .excel-table tbody tr:hover {
+        background-color: var(--bg-hover);
+    }
+    .badge-status {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        display: inline-block;
+    }
+    .bg-rec-green { background-color: rgba(16, 185, 129, 0.14); color: #059669; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .bg-rec-yellow { background-color: rgba(245, 158, 11, 0.14); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .bg-rec-orange { background-color: rgba(249, 115, 22, 0.14); color: #ea580c; border: 1px solid rgba(249, 115, 22, 0.35); }
+    .bg-rec-red { background-color: rgba(239, 68, 68, 0.14); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); }
+    .btn-action-sm {
+        border-radius: 7px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        color: #ffffff !important;
+        border: none;
+        transition: opacity 0.15s ease;
+    }
+    .btn-action-sm:hover { opacity: 0.9; color: #ffffff !important; }
+</style>
+@endsection
+
+@section('content')
+@if ($role == 'psikolog')
+
+    <!-- Filter Controls Card -->
+    <div class="card-custom">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
+            <div>
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: var(--text-primary);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    Filter Data Ujian
+                </h5>
+                <span class="small text-muted">Saring kandidat berdasarkan tanggal, nama, perusahaan, atau posisi</span>
             </div>
         </div>
-    </nav>
 
-    <div class="container-fluid px-4">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 12px; background: #064e3b; border-color: #047857; color: #a7f3d0;">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <form action="{{ route('dashboard.index') }}" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="filter-label">Tanggal Awal</label>
+                <input type="date" name="tgl_awal" class="form-control form-control-custom" value="{{ $tgl_awal ?? '' }}">
             </div>
-        @endif
-
-        @if ($role == 'psikolog')
-        
-        <!-- Filter Controls Card -->
-        <div class="card-custom">
-            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3" style="border-color: #1e293b !important;">
-                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
-                    🔍 Filter Data Ujian
-                </h5>
-                <span class="small" style="color: #cbd5e1;">Filter berdasarkan parameter pencarian</span>
+            <div class="col-md-2">
+                <label class="filter-label">Tanggal Akhir</label>
+                <input type="date" name="tgl_akhir" class="form-control form-control-custom" value="{{ $tgl_akhir ?? '' }}">
             </div>
-            
-            <form action="{{ route('dashboard.index') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-2">
-                    <label class="filter-label">Tanggal Awal</label>
-                    <input type="date" name="tgl_awal" class="form-control form-control-custom" value="{{ $tgl_awal ?? '' }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="filter-label">Tanggal Akhir</label>
-                    <input type="date" name="tgl_akhir" class="form-control form-control-custom" value="{{ $tgl_akhir ?? '' }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="filter-label">Cari Nama Kandidat</label>
-                    <input type="text" name="nama" class="form-control form-control-custom" placeholder="Ketik nama kandidat..." value="{{ $search_nama ?? '' }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="filter-label">Filter Perusahaan</label>
-                    <select name="perusahaan" class="form-select form-select-custom">
-                        <option value="">-- Semua Perusahaan --</option>
-                        @if(isset($perusahaanList))
-                            @foreach($perusahaanList as $p)
-                                <option value="{{ $p }}" {{ ($selected_perusahaan ?? '') == $p ? 'selected' : '' }}>{{ $p }}</option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="filter-label">Filter Posisi / Divisi</label>
-                    <select name="posisi" class="form-select form-select-custom">
-                        <option value="">-- Semua Posisi --</option>
-                        @if(isset($posisiList))
-                            @foreach($posisiList as $pos)
-                                <option value="{{ $pos }}" {{ ($selected_posisi ?? '') == $pos ? 'selected' : '' }}>{{ $pos }}</option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
-                
-                <div class="col-12 d-flex gap-2 justify-content-end mt-4 pt-3 border-top" style="border-color: #1e293b !important;">
-                    <a href="{{ route('dashboard.index') }}" class="btn btn-reset">Reset Filter</a>
-                    <button type="submit" class="btn btn-filter">Terapkan Filter</button>
-                    
-                    @if(!empty($tgl_awal) && !empty($tgl_akhir))
-                        <a href="{{ route('dashboard.export', ['tgl_awal' => $tgl_awal, 'tgl_akhir' => $tgl_akhir]) }}" class="btn btn-excel">📥 Export Excel (.xls)</a>
+            <div class="col-md-3">
+                <label class="filter-label">Cari Nama Kandidat</label>
+                <input type="text" name="nama" class="form-control form-control-custom" placeholder="Ketik nama kandidat..." value="{{ $search_nama ?? '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">Perusahaan / Klien</label>
+                <select name="perusahaan" class="form-select form-select-custom">
+                    <option value="">-- Semua Perusahaan --</option>
+                    @if(isset($perusahaanList))
+                        @foreach($perusahaanList as $p)
+                            <option value="{{ $p }}" {{ ($selected_perusahaan ?? '') == $p ? 'selected' : '' }}>{{ $p }}</option>
+                        @endforeach
                     @endif
-                </div>
-            </form>
-        </div>
-
-        <!-- Excel Data Table Card -->
-        <div class="card-custom">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
-                    📊 Hasil Ujian Kandidat (Tabel Data)
-                </h5>
-                <span class="badge bg-primary px-3 py-2 fs-6" style="border-radius: 8px; font-weight: 700;">Total: {{ count($peserta) }} Data</span>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">Posisi / Divisi</label>
+                <select name="posisi" class="form-select form-select-custom">
+                    <option value="">-- Semua Posisi --</option>
+                    @if(isset($posisiList))
+                        @foreach($posisiList as $pos)
+                            <option value="{{ $pos }}" {{ ($selected_posisi ?? '') == $pos ? 'selected' : '' }}>{{ $pos }}</option>
+                        @endforeach
+                    @endif
+                </select>
             </div>
 
-            <div class="table-responsive">
-                <table class="excel-table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Waktu Ujian</th>
-                            <th>Nama Kandidat</th>
-                            <th>Perusahaan</th>
-                            <th>Posisi Dilamar</th>
-                            <th>Pelanggaran</th>
-                            <th>WA</th>
-                            <th>AN</th>
-                            <th>ZR</th>
-                            <th>FA</th>
-                            <th>Rata SW</th>
-                            <th>Kategori IST</th>
-                            <th>Nilai Kasus</th>
-                            <th>Skor Akhir</th>
-                            <th>Kategori Akhir</th>
-                            <th class="text-center">Aksi / Download PDF</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($peserta as $index => $p)
-                        @php
-                            $a = $p->analysis;
-                            
-                            // Badge Styling for Recommendation
+            <div class="col-12 d-flex flex-wrap gap-2 justify-content-end mt-3 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+                <a href="{{ route('dashboard.index') }}" class="btn btn-custom btn-custom-secondary">Reset Filter</a>
+                <button type="submit" class="btn btn-custom btn-custom-blue">Terapkan Filter</button>
+
+                @if(!empty($tgl_awal) && !empty($tgl_akhir))
+                    <a href="{{ route('dashboard.export', ['tgl_awal' => $tgl_awal, 'tgl_akhir' => $tgl_akhir]) }}" class="btn btn-custom btn-custom-emerald d-inline-flex align-items-center gap-1">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export Excel (.xls)
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: var(--text-primary);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Hasil Ujian Kandidat
+            </h5>
+            <span class="badge bg-primary px-3 py-2" style="border-radius: 8px; font-weight: 700;">Total: {{ count($peserta) }} Data</span>
+        </div>
+
+        <div class="table-wrapper" tabindex="0" role="region" aria-label="Tabel Hasil Ujian Kandidat">
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Waktu Ujian</th>
+                        <th>Nama Kandidat</th>
+                        <th>Perusahaan</th>
+                        <th>Posisi Dilamar</th>
+                        <th>Pelanggaran</th>
+                        <th>WA</th>
+                        <th>AN</th>
+                        <th>ZR</th>
+                        <th>FA</th>
+                        <th>Rata SW</th>
+                        <th>Kategori IST</th>
+                        <th>Nilai Kasus</th>
+                        <th>Skor Akhir</th>
+                        <th>Kategori Akhir</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($peserta as $index => $p)
+                    @php
+                        $a = $p->analysis;
+                        $badgeClass = 'bg-rec-yellow';
+                        if (str_contains($a['kategori_akhir'], 'DIREKOMENDASIKAN DENGAN CATATAN')) {
                             $badgeClass = 'bg-rec-yellow';
-                            if (str_contains($a['kategori_akhir'], 'DIREKOMENDASIKAN DENGAN CATATAN')) {
-                                $badgeClass = 'bg-rec-yellow';
-                            } elseif (str_contains($a['kategori_akhir'], 'DIREKOMENDASIKAN')) {
-                                $badgeClass = 'bg-rec-green';
-                            } elseif (str_contains($a['kategori_akhir'], 'DIPERTIMBANGKAN') || str_contains($a['kategori_akhir'], 'KURANG')) {
-                                $badgeClass = 'bg-rec-orange';
-                            } else {
-                                $badgeClass = 'bg-rec-red';
-                            }
-                        @endphp
-                        <tr>
-                            <td class="fw-semibold text-slate-400">{{ $index + 1 }}</td>
-                            <td class="text-slate-300">{{ \Carbon\Carbon::parse($p->waktu_mulai)->format('d/m/Y H:i') }}</td>
-                            <td class="fw-bold text-white fs-6">{{ $p->nama }}</td>
-                            <td><span class="badge bg-slate-800 text-emerald-400 border border-emerald-500/30 font-bold px-2.5 py-1">{{ $p->perusahaan ?: '-' }}</span></td>
-                            <td><span class="badge bg-dark text-info border border-secondary font-bold px-2.5 py-1">{{ $p->posisi }}</span></td>
-                            <td>
-                                @if($p->total_pelanggaran > 0)
-                                    <span class="badge bg-danger text-white font-bold">{{ $p->total_pelanggaran }}x Fraud</span>
-                                @else
-                                    <span class="text-slate-400 font-semibold">0</span>
-                                @endif
-                            </td>
-                            <td class="fw-semibold text-slate-200">{{ $a['sw_wa'] }}</td>
-                            <td class="fw-semibold text-slate-200">{{ $a['sw_an'] }}</td>
-                            <td class="fw-semibold text-slate-200">{{ $a['sw_zr'] }}</td>
-                            <td class="fw-semibold text-slate-200">{{ $a['sw_fa'] }}</td>
-                            <td class="fw-bold text-warning fs-6">{{ $a['total_sw'] }}</td>
-                            <td>
-                                @php
-                                    $katIstClass = 'bg-secondary text-white';
-                                    if (str_contains($a['kategori_ist'], 'Tinggi')) {
-                                        $katIstClass = 'bg-success text-white';
-                                    } elseif (str_contains($a['kategori_ist'], 'Cukup') || str_contains($a['kategori_ist'], 'Sedang')) {
-                                        $katIstClass = 'bg-info text-dark';
-                                    } elseif (str_contains($a['kategori_ist'], 'Rendah')) {
-                                        $katIstClass = 'bg-warning text-dark';
-                                    } elseif (str_contains($a['kategori_ist'], 'Diskualifikasi')) {
-                                        $katIstClass = 'bg-danger text-white';
-                                    }
-                                @endphp
-                                <span class="badge {{ $katIstClass }} fw-bold px-2.5 py-1.5" style="font-size: 12px;">{{ $a['kategori_ist'] }}</span>
-                            </td>
-                            <td>
-                                @if($a['studi_kasus']['has_case'])
-                                    <span class="fw-bold text-info fs-6">{{ $a['studi_kasus']['total_skor'] }}</span>
-                                @else
-                                    <span class="text-slate-500">-</span>
-                                @endif
-                            </td>
-                            <td class="fw-bold text-white fs-6">{{ $a['skor_akhir'] }}</td>
-                            <td>
-                                <span class="badge-status {{ $badgeClass }}">{{ $a['kategori_akhir'] }}</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="d-flex gap-1 justify-content-center">
-                                    <a href="{{ route('dashboard.peserta.edit', $p->id_peserta) }}" class="btn-pdf" style="background-color: #f59e0b; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
-                                        ✏️ Edit
-                                    </a>
-                                    <a href="{{ route('dashboard.pdf', $p->id_peserta) }}" target="_blank" class="btn-pdf">
-                                        📄 PDF
-                                    </a>
-                                    <a href="{{ url('/dashboard/word/' . $p->id_peserta) }}" target="_blank" class="btn-pdf" style="background-color: #2563eb; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);">
-                                        📝 Word
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="16" class="text-center py-5 text-slate-400 fs-6">
-                                Tidak ada data hasil ujian yang sesuai dengan filter pencarian.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        } elseif (str_contains($a['kategori_akhir'], 'DIREKOMENDASIKAN')) {
+                            $badgeClass = 'bg-rec-green';
+                        } elseif (str_contains($a['kategori_akhir'], 'DIPERTIMBANGKAN') || str_contains($a['kategori_akhir'], 'KURANG')) {
+                            $badgeClass = 'bg-rec-orange';
+                        } else {
+                            $badgeClass = 'bg-rec-red';
+                        }
+                    @endphp
+                    <tr>
+                        <td class="text-muted fw-semibold">{{ $index + 1 }}</td>
+                        <td>{{ \Carbon\Carbon::parse($p->waktu_mulai)->format('d/m/Y H:i') }}</td>
+                        <td class="fw-bold" style="color: var(--text-primary);">{{ $p->nama }}</td>
+                        <td><span class="badge bg-slate-800 border border-secondary px-2 py-1">{{ $p->perusahaan ?: '-' }}</span></td>
+                        <td><span class="badge bg-slate-800 border border-secondary px-2 py-1">{{ $p->posisi }}</span></td>
+                        <td>
+                            @if($p->total_pelanggaran > 0)
+                                <span class="badge bg-danger fw-bold">{{ $p->total_pelanggaran }}x Fraud</span>
+                            @else
+                                <span class="text-muted fw-semibold">0</span>
+                            @endif
+                        </td>
+                        <td class="fw-semibold">{{ $a['sw_wa'] }}</td>
+                        <td class="fw-semibold">{{ $a['sw_an'] }}</td>
+                        <td class="fw-semibold">{{ $a['sw_zr'] }}</td>
+                        <td class="fw-semibold">{{ $a['sw_fa'] }}</td>
+                        <td class="fw-bold" style="color: var(--brand-primary);">{{ $a['total_sw'] }}</td>
+                        <td>
+                            @php
+                                $katIstClass = 'bg-secondary text-white';
+                                if (str_contains($a['kategori_ist'], 'Tinggi')) {
+                                    $katIstClass = 'bg-success text-white';
+                                } elseif (str_contains($a['kategori_ist'], 'Cukup') || str_contains($a['kategori_ist'], 'Sedang')) {
+                                    $katIstClass = 'bg-info text-dark';
+                                } elseif (str_contains($a['kategori_ist'], 'Rendah')) {
+                                    $katIstClass = 'bg-warning text-dark';
+                                } elseif (str_contains($a['kategori_ist'], 'Diskualifikasi')) {
+                                    $katIstClass = 'bg-danger text-white';
+                                }
+                            @endphp
+                            <span class="badge {{ $katIstClass }} fw-bold px-2.5 py-1">{{ $a['kategori_ist'] }}</span>
+                        </td>
+                        <td>
+                            @if($a['studi_kasus']['has_case'])
+                                <span class="fw-bold" style="color: var(--brand-primary);">{{ $a['studi_kasus']['total_skor'] }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="fw-bold" style="color: var(--text-primary);">{{ $a['skor_akhir'] }}</td>
+                        <td>
+                            <span class="badge-status {{ $badgeClass }}">{{ $a['kategori_akhir'] }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex gap-1 justify-content-center">
+                                <a href="{{ route('dashboard.peserta.edit', $p->id_peserta) }}" class="btn-action-sm" style="background-color: #d97706;">Edit</a>
+                                <a href="{{ route('dashboard.pdf', $p->id_peserta) }}" target="_blank" class="btn-action-sm" style="background-color: #dc2626;">PDF</a>
+                                <a href="{{ url('/dashboard/word/' . $p->id_peserta) }}" target="_blank" class="btn-action-sm" style="background-color: #2563eb;">Word</a>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="16" class="text-center py-5 text-muted">
+                            Tidak ada data hasil ujian yang sesuai dengan filter pencarian.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+@elseif ($role == 'admin')
+
+    <!-- Summary Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label mb-1">Perusahaan / Klien Terdaftar</div>
+                    <div class="stat-value">{{ $adminStats['perusahaan'] ?? 0 }}</div>
+                </div>
+                <div class="module-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+                </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="stat-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label mb-1">Posisi Pekerjaan Aktif</div>
+                    <div class="stat-value">{{ $adminStats['posisi'] ?? 0 }}</div>
+                </div>
+                <div class="module-icon" style="background: rgba(29, 78, 216, 0.12); color: #2563eb;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label mb-1">Item Studi Kasus &amp; Esai (Sesi 5)</div>
+                    <div class="stat-value">{{ $adminStats['soal_sesi5'] ?? 0 }}</div>
+                </div>
+                <div class="module-icon" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        @elseif ($role == 'admin')
-        <div class="row g-4">
-            <!-- Left Side: CRUD Menu Grid -->
-            <div class="col-md-8">
-                <div class="card-custom h-100">
-                    <h5 class="text-white mb-4 fw-bold border-bottom pb-2" style="border-color: rgba(255,255,255,0.08) !important;">🛠️ Panel Pengelolaan Portal Psikotes</h5>
-                    <p class="text-muted small mb-4">Silakan pilih sub-modul yang ingin Anda kelola:</p>
-                    
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.posisi') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">💼</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Kelola Posisi</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Tambah/edit posisi pelamar</span>
-                                </div>
-                            </a>
-                        </div>
-                        
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.sesi1') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">📝</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Sesi 1 (WA)</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Wortauswahl (Pilihan Kata)</span>
-                                </div>
-                            </a>
-                        </div>
+    <div class="row g-4">
+        <!-- Left Side: CRUD Menu Grid -->
+        <div class="col-lg-8">
+            <div class="card-custom h-100 mb-0">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
+                    <div>
+                        <h5 class="fw-bold mb-1" style="color: var(--text-primary);">Panel Pengelolaan Portal Psikotes</h5>
+                        <p class="text-muted small mb-0">Pilih modul data master atau bank soal yang ingin dikelola:</p>
+                    </div>
+                </div>
 
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.sesi2') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">🤝</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Sesi 2 (AN)</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Analogi (Hubungan Kata)</span>
-                                </div>
-                            </a>
-                        </div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.perusahaan') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Kelola Perusahaan</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Tambah, ubah, atau hapus data klien</div>
+                            </div>
+                        </a>
+                    </div>
 
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.sesi3') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">🔢</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Sesi 3 (ZR)</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Zahlenreihen (Deret Angka)</span>
-                                </div>
-                            </a>
-                        </div>
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.posisi') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(29, 78, 216, 0.12); color: #2563eb;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Kelola Posisi</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Atur posisi pelamar &amp; relasi klien</div>
+                            </div>
+                        </a>
+                    </div>
 
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.sesi4') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">🎨</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Sesi 4 (FA)</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Figurenauswahl (Kunci Gambar)</span>
-                                </div>
-                            </a>
-                        </div>
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.sesi1') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(14, 165, 233, 0.12); color: #0284c7;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Sesi 1 (WA)</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Wortauswahl (Pilihan Kata)</div>
+                            </div>
+                        </a>
+                    </div>
 
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.sesi5') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">📄</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Sesi 5 (Essay)</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Esai & Studi Kasus Posisi</span>
-                                </div>
-                            </a>
-                        </div>
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.sesi2') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Sesi 2 (AN)</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Analogi (Hubungan Kata)</div>
+                            </div>
+                        </a>
+                    </div>
 
-                        <div class="col-sm-6">
-                            <a href="{{ route('dashboard.rubrik') }}" class="btn w-100 p-4 text-start d-flex align-items-center gap-3" style="background-color: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; transition: all 0.2s ease; text-decoration: none;">
-                                <div class="fs-1">📋</div>
-                                <div>
-                                    <h6 class="text-white fw-bold mb-1">Rubrik Penilaian</h6>
-                                    <span class="text-muted" style="font-size: 12px;">Panduan Penilaian Sesi 5</span>
-                                </div>
-                            </a>
-                        </div>
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.sesi3') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(239, 68, 68, 0.12); color: #dc2626;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Sesi 3 (ZR)</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Zahlenreihen (Deret Angka)</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.sesi4') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Sesi 4 (FA)</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Figurenauswahl (Kunci Gambar)</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.sesi5') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(236, 72, 153, 0.12); color: #db2777;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Sesi 5 (Essay)</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Esai &amp; Studi Kasus Posisi</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <a href="{{ route('dashboard.rubrik') }}" class="module-card">
+                            <div class="module-icon" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size: 14.5px;">Rubrik Penilaian</div>
+                                <div class="text-muted" style="font-size: 12.5px;">Panduan Penilaian Sesi 5</div>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Right Side: Security & Configuration -->
-            <div class="col-md-4">
-                <div class="card-custom h-100">
-                    <h5 class="text-white mb-3 fw-bold border-bottom pb-2" style="border-color: rgba(255,255,255,0.08) !important;">🔐 Keamanan & PIN</h5>
-                    <p class="text-muted small mb-4">Anda dapat mengganti PIN akses yang digunakan oleh Tim Psikolog di sini.</p>
-                    
-                    <form action="{{ route('dashboard.pin') }}" method="POST">
-                        @csrf
-                        <div class="mb-4">
-                            <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Masukkan PIN Psikolog Baru</label>
-                            <input type="text" name="pin_baru" class="form-control form-control-custom text-center" required placeholder="123456" autofocus style="letter-spacing: 2px;">
-                        </div>
-                        <button type="submit" class="btn btn-filter w-100 fw-bold">Simpan PIN Baru</button>
-                    </form>
+        <!-- Right Side: Security & Configuration -->
+        <div class="col-lg-4">
+            <div class="card-custom h-100 mb-0">
+                <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <h5 class="fw-bold mb-0" style="color: var(--text-primary);">Keamanan &amp; PIN Akses</h5>
                 </div>
+                <p class="text-muted small mb-4">Ganti PIN akses yang digunakan oleh Tim Psikolog untuk masuk ke dashboard evaluasi kandidat.</p>
+
+                <form action="{{ route('dashboard.pin') }}" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Masukkan PIN Psikolog Baru</label>
+                        <input type="text" name="pin_baru" class="form-control form-control-custom text-center" required placeholder="Contoh: 123456" autocomplete="off" style="letter-spacing: 2px;">
+                    </div>
+                    <button type="submit" class="btn btn-custom btn-custom-blue w-100 fw-bold">Simpan PIN Baru</button>
+                </form>
             </div>
         </div>
-        @endif
-
     </div>
-    
-    <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-</body>
-</html>
+
+@endif
+@endsection
