@@ -30,7 +30,15 @@ class UjianController extends Controller
         }
 
         $posisiList = \App\Models\Posisi::orderBy('nama', 'asc')->get();
-        return view('ujian.index', compact('posisiList'));
+        $perusahaanList = \Illuminate\Support\Facades\Schema::hasTable('perusahaan')
+            ? \App\Models\Perusahaan::orderBy('nama', 'asc')->get()
+            : collect([
+                (object) ['id' => null, 'nama' => 'PT. GOSYEN POLINATOR INDONESIA'],
+                (object) ['id' => null, 'nama' => 'PT. MAJU ANUGRAH JAYA UNGGUL'],
+                (object) ['id' => null, 'nama' => 'PT. PANEN ANUGERAH NUSINDO'],
+                (object) ['id' => null, 'nama' => 'PT DWI TUNGGAL MULIA KIMIA'],
+            ]);
+        return view('ujian.index', compact('posisiList', 'perusahaanList'));
     }
 
     public function start(Request $request)

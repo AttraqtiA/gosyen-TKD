@@ -137,11 +137,10 @@
             </button>
             
             <ul class="dropdown-menu w-100" aria-labelledby="perusahaanDropdown" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #dee2e6; padding: 6px 0;">
-                <li><button class="dropdown-item py-2 perusahaan-item" type="button" data-value="PT. GOSYEN POLINATOR INDONESIA">PT. GOSYEN POLINATOR INDONESIA</button></li>
-                <li><button class="dropdown-item py-2 perusahaan-item" type="button" data-value="PT. MAJU ANUGRAH JAYA UNGGUL">PT. MAJU ANUGRAH JAYA UNGGUL</button></li>
-                <li><button class="dropdown-item py-2 perusahaan-item" type="button" data-value="PT. PANEN ANUGERAH NUSINDO">PT. PANEN ANUGERAH NUSINDO</button></li>
-                <li><button class="dropdown-item py-2 perusahaan-item" type="button" data-value="PT DWI TUNGGAL MULIA KIMIA">PT DWI TUNGGAL MULIA KIMIA</button></li>
-                <li><button class="dropdown-item py-2 perusahaan-item fw-bold text-primary" type="button" data-value="Lainnya">{{ __('Lainnya (Sebutkan)') }}</button></li>
+                @foreach($perusahaanList as $per)
+                <li><button class="dropdown-item py-2 perusahaan-item" type="button" data-value="{{ $per->nama }}" data-perusahaan-id="{{ $per->id ?? '' }}">{{ $per->nama }}</button></li>
+                @endforeach
+                <li><button class="dropdown-item py-2 perusahaan-item fw-bold text-primary" type="button" data-value="Lainnya" data-perusahaan-id="">{{ __('Lainnya (Sebutkan)') }}</button></li>
             </ul>
             <input type="hidden" name="perusahaan" id="perusahaan" value="{{ old('perusahaan') }}" required>
         </div>
@@ -163,9 +162,9 @@
                 </li>
                 
                 @foreach($posisiList as $p)
-                <li><button class="dropdown-item py-2 posisi-item" type="button" data-value="{{ $p->nama }}">{{ $p->nama }}</button></li>
+                <li><button class="dropdown-item py-2 posisi-item" type="button" data-value="{{ $p->nama }}" data-perusahaan-id="{{ $p->perusahaan_id ?? '' }}">{{ $p->nama }}</button></li>
                 @endforeach
-                <li><button class="dropdown-item py-2 posisi-item fw-bold text-primary" type="button" data-value="Lainnya">{{ __('Lainnya (Sebutkan)') }}</button></li>
+                <li><button class="dropdown-item py-2 posisi-item fw-bold text-primary" type="button" data-value="Lainnya" data-perusahaan-id="">{{ __('Lainnya (Sebutkan)') }}</button></li>
             </ul>
             <input type="hidden" name="posisi" id="posisi" value="{{ old('posisi') }}" required>
         </div>
@@ -219,15 +218,35 @@
             }
         }
 
+        let selectedPerusahaanId = '';
+
+        function filterPosisiByPerusahaan() {
+            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            positionsList.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                const itemPerusahaanId = item.getAttribute('data-perusahaan-id') || '';
+                const matchesCompany = !selectedPerusahaanId || !itemPerusahaanId || itemPerusahaanId === selectedPerusahaanId;
+                const matchesSearch = text.includes(term);
+
+                if (matchesCompany && matchesSearch) {
+                    item.parentElement.style.display = 'block';
+                } else {
+                    item.parentElement.style.display = 'none';
+                }
+            });
+        }
+
         perusahaanList.forEach(item => {
             item.addEventListener('click', function() {
                 const val = this.getAttribute('data-value');
                 const text = this.innerText;
+                selectedPerusahaanId = this.getAttribute('data-perusahaan-id') || '';
                 
                 perusahaanInput.value = val;
                 perusahaanText.innerText = text;
                 
                 togglePerusahaanLainnya();
+                filterPosisiByPerusahaan();
                 
                 if (val === 'Lainnya') {
                     setTimeout(() => pInput.focus(), 100);
@@ -241,6 +260,7 @@
             const matchedP = Array.from(perusahaanList).find(item => item.getAttribute('data-value') === perusahaanInput.value);
             if (matchedP) {
                 perusahaanText.innerText = matchedP.innerText;
+                selectedPerusahaanId = matchedP.getAttribute('data-perusahaan-id') || '';
             } else {
                 perusahaanText.innerText = perusahaanInput.value;
             }

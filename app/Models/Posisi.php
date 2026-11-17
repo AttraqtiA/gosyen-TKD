@@ -12,6 +12,13 @@ class Posisi extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'nama'
+        'nama',
+        'perusahaan_id',
+        'rubrik_penilaian',
     ];
+
+    public function perusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
+    }
 }

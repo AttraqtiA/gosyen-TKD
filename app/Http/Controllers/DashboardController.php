@@ -59,7 +59,12 @@ class DashboardController extends Controller
 
             // Get list of all distinct positions & companies for filter dropdowns
             $posisiList = PesertaUji::select('posisi')->whereNotNull('posisi')->distinct()->orderBy('posisi', 'asc')->pluck('posisi')->toArray();
-            $perusahaanList = PesertaUji::select('perusahaan')->whereNotNull('perusahaan')->where('perusahaan', '!=', '')->distinct()->orderBy('perusahaan', 'asc')->pluck('perusahaan')->toArray();
+            $perusahaanFromDb = \Illuminate\Support\Facades\Schema::hasTable('perusahaan')
+                ? \App\Models\Perusahaan::orderBy('nama', 'asc')->pluck('nama')->toArray()
+                : [];
+            $perusahaanFromPeserta = PesertaUji::select('perusahaan')->whereNotNull('perusahaan')->where('perusahaan', '!=', '')->distinct()->pluck('perusahaan')->toArray();
+            $perusahaanList = array_values(array_unique(array_merge($perusahaanFromDb, $perusahaanFromPeserta)));
+            sort($perusahaanList);
             if (empty($perusahaanList)) {
                 $perusahaanList = ['PT. GOSYEN POLINATOR INDONESIA', 'PT. MAJU ANUGRAH JAYA UNGGUL', 'PT. PANEN ANUGERAH NUSINDO', 'PT DWI TUNGGAL MULIA KIMIA'];
             }
@@ -202,13 +207,63 @@ class DashboardController extends Controller
         }
     }
 
+    // 0. PERUSAHAAN (COMPANY / CLIENT) CRUD
+    public function listPerusahaan()
+    {
+        $this->checkAdmin();
+        $role = 'admin';
+        $perusahaanList = \App\Models\Perusahaan::withCount('posisi')->orderBy('nama', 'asc')->get();
+        return view('dashboard.admin.perusahaan', compact('role', 'perusahaanList'));
+    }
+
+    public function storePerusahaan(Request $request)
+    {
+        $this->checkAdmin();
+        $request->validate([
+            'nama' => 'required|string|max:150|unique:perusahaan,nama',
+        ]);
+
+        \App\Models\Perusahaan::create([
+            'nama' => strtoupper(trim($request->nama))
+        ]);
+
+        return redirect()->back()->with('success', 'Perusahaan / Klien baru berhasil ditambahkan!');
+    }
+
+    public function updatePerusahaan(Request $request, $id)
+    {
+        $this->checkAdmin();
+        $request->validate([
+            'nama' => 'required|string|max:150|unique:perusahaan,nama,' . $id,
+        ]);
+
+        $perusahaan = \App\Models\Perusahaan::findOrFail($id);
+        $perusahaan->update(['nama' => strtoupper(trim($request->nama))]);
+
+        return redirect()->back()->with('success', 'Nama perusahaan berhasil diperbarui!');
+    }
+
+    public function deletePerusahaan($id)
+    {
+        $this->checkAdmin();
+        $perusahaan = \App\Models\Perusahaan::findOrFail($id);
+        // Relasi posisi.perusahaan_id menggunakan ON DELETE SET NULL,
+        // sehingga posisi & data kandidat tetap aman dan tidak ikut terhapus.
+        $perusahaan->delete();
+
+        return redirect()->back()->with('success', 'Perusahaan berhasil dihapus! Posisi terkait otomatis menjadi Umum (tanpa perusahaan).');
+    }
+
     // 1. POSISI CRUD
     public function listPosisi()
     {
         $this->checkAdmin();
         $role = 'admin';
-        $posisiList = \App\Models\Posisi::orderBy('nama', 'asc')->get();
-        return view('dashboard.admin.posisi', compact('role', 'posisiList'));
+        $posisiList = \App\Models\Posisi::with('perusahaan')->orderBy('nama', 'asc')->get();
+        $perusahaanList = \Illuminate\Support\Facades\Schema::hasTable('perusahaan')
+            ? \App\Models\Perusahaan::orderBy('nama', 'asc')->get()
+            : collect();
+        return view('dashboard.admin.posisi', compact('role', 'posisiList', 'perusahaanList'));
     }
 
     public function storePosisi(Request $request)
@@ -216,10 +271,12 @@ class DashboardController extends Controller
         $this->checkAdmin();
         $request->validate([
             'nama' => 'required|string|unique:posisi,nama',
+            'perusahaan_id' => 'nullable|exists:perusahaan,id',
         ]);
 
         \App\Models\Posisi::create([
-            'nama' => strtoupper(trim($request->nama))
+            'nama' => strtoupper(trim($request->nama)),
+            'perusahaan_id' => $request->perusahaan_id ?: null,
         ]);
 
         return redirect()->back()->with('success', 'Posisi pekerjaan baru berhasil ditambahkan!');
@@ -230,13 +287,17 @@ class DashboardController extends Controller
         $this->checkAdmin();
         $request->validate([
             'nama' => 'required|string|unique:posisi,nama,' . $id,
+            'perusahaan_id' => 'nullable|exists:perusahaan,id',
         ]);
 
         $posisi = \App\Models\Posisi::findOrFail($id);
         $oldNama = $posisi->nama;
         $newNama = strtoupper(trim($request->nama));
         
-        $posisi->update(['nama' => $newNama]);
+        $posisi->update([
+            'nama' => $newNama,
+            'perusahaan_id' => $request->perusahaan_id ?: null,
+        ]);
         
         // Cascade update in bank_soal_sesi5
         if (\Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5')) {

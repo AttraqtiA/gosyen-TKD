@@ -14,6 +14,15 @@
                     <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Nama Posisi Pekerjaan</label>
                     <input type="text" name="nama" class="form-control form-control-custom" required placeholder="Contoh: BACKEND DEVELOPER" autofocus autocomplete="off">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Perusahaan / Klien (Opsional)</label>
+                    <select name="perusahaan_id" class="form-select form-select-custom">
+                        <option value="">-- Semua Perusahaan / Umum --</option>
+                        @foreach($perusahaanList ?? [] as $perusahaan)
+                        <option value="{{ $perusahaan->id }}">{{ $perusahaan->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-custom btn-custom-emerald w-100 fw-bold">Simpan Posisi</button>
             </form>
         </div>
@@ -31,9 +40,10 @@
                 <table class="table-custom mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 80px;">No</th>
+                            <th style="width: 70px;">No</th>
                             <th>Nama Posisi</th>
-                            <th class="text-center" style="width: 200px;">Aksi</th>
+                            <th>Perusahaan / Klien</th>
+                            <th class="text-center" style="width: 190px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,6 +51,13 @@
                         <tr>
                             <td class="fw-semibold text-muted">{{ $index + 1 }}</td>
                             <td class="fw-bold text-white">{{ $posisi->nama }}</td>
+                            <td>
+                                @if($posisi->perusahaan)
+                                    <span class="badge bg-slate-800 text-emerald-400 border border-emerald-500/30 px-2.5 py-1">{{ $posisi->perusahaan->nama }}</span>
+                                @else
+                                    <span class="badge bg-secondary/40 text-muted px-2.5 py-1">Umum / Semua</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 <div class="d-flex gap-2 justify-content-center">
                                     <!-- Edit Button -->
@@ -60,7 +77,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="3" class="text-center py-4 text-muted">Belum ada data posisi pekerjaan.</td>
+                            <td colspan="4" class="text-center py-4 text-muted">Belum ada data posisi pekerjaan.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -85,6 +102,15 @@
                     <div class="mb-3">
                         <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Nama Posisi Pekerjaan</label>
                         <input type="text" name="nama" class="form-control form-control-custom" required value="{{ $posisi->nama }}" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Perusahaan / Klien (Opsional)</label>
+                        <select name="perusahaan_id" class="form-select form-select-custom">
+                            <option value="">-- Semua Perusahaan / Umum --</option>
+                            @foreach($perusahaanList ?? [] as $perusahaan)
+                            <option value="{{ $perusahaan->id }}" {{ $posisi->perusahaan_id == $perusahaan->id ? 'selected' : '' }}>{{ $perusahaan->nama }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer border-top border-secondary">

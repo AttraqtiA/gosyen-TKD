@@ -34,7 +34,12 @@ Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('d
 Route::get('/dashboard/pdf/{id}', [DashboardController::class, 'generatePdf'])->name('dashboard.pdf');
 Route::get('/dashboard/word/{id}', [DashboardController::class, 'generateWord'])->name('dashboard.word');
 
-// Admin Management Routes (CRUD Sesi 1-5 & Posisi)
+// Admin Management Routes (CRUD Sesi 1-5, Posisi & Perusahaan)
+Route::get('/dashboard/perusahaan', [DashboardController::class, 'listPerusahaan'])->name('dashboard.perusahaan');
+Route::post('/dashboard/perusahaan', [DashboardController::class, 'storePerusahaan'])->name('dashboard.perusahaan.store');
+Route::post('/dashboard/perusahaan/{id}/update', [DashboardController::class, 'updatePerusahaan'])->name('dashboard.perusahaan.update');
+Route::post('/dashboard/perusahaan/{id}/delete', [DashboardController::class, 'deletePerusahaan'])->name('dashboard.perusahaan.delete');
+
 Route::get('/dashboard/posisi', [DashboardController::class, 'listPosisi'])->name('dashboard.posisi');
 Route::post('/dashboard/posisi', [DashboardController::class, 'storePosisi'])->name('dashboard.posisi.store');
 Route::post('/dashboard/posisi/{id}/update', [DashboardController::class, 'updatePosisi'])->name('dashboard.posisi.update');

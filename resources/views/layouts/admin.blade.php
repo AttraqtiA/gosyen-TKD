@@ -214,6 +214,9 @@
                     </li>
                     @if (session('role_akses') === 'admin')
                     <li class="nav-item">
+                        <a class="nav-link nav-link-custom {{ Route::is('dashboard.perusahaan') ? 'active' : '' }}" href="{{ route('dashboard.perusahaan') }}">Kelola Perusahaan</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link nav-link-custom {{ Route::is('dashboard.posisi') ? 'active' : '' }}" href="{{ route('dashboard.posisi') }}">Kelola Posisi</a>
                     </li>
                     <li class="nav-item">
