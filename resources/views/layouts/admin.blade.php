@@ -236,19 +236,74 @@
             font-weight: 700;
         }
 
+        /* Top Progress Bar & Subtle Loading Overlay */
+        #top-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--brand-primary), #06b6d4);
+            z-index: 99999;
+            opacity: 0;
+            transition: width 0.28s ease, opacity 0.2s ease;
+            pointer-events: none;
+        }
+        #top-progress-bar.active {
+            opacity: 1;
+        }
+        #app-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.35);
+            backdrop-filter: blur(3px);
+            z-index: 99998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #app-loading-overlay.show {
+            display: flex;
+        }
+        .loading-pill {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 14px 24px;
+            border-radius: 14px;
+            box-shadow: var(--shadow-dropdown);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid var(--border-strong);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: spinLoader 0.7s linear infinite;
+        }
+        @keyframes spinLoader {
+            to { transform: rotate(360deg); }
+        }
+
         /* Theme Toggle Button */
         .theme-toggle-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
             border: 1px solid var(--border-strong);
             background-color: var(--bg-surface);
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.15s ease;
+            flex-shrink: 0;
         }
         .theme-toggle-btn:hover {
             background-color: var(--bg-hover);
@@ -265,17 +320,33 @@
             :root:not([data-theme="light"]) .theme-toggle-btn .icon-moon { display: none; }
         }
 
+        .nav-utility-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-left: 12px;
+        }
+
         .role-pill {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             background-color: var(--bg-surface-subtle);
-            border: 1px solid var(--border-subtle);
-            padding: 5px 11px;
+            border: 1px solid var(--border-strong);
+            padding: 6px 14px;
             border-radius: 999px;
             font-size: 12.5px;
             font-weight: 600;
             color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .btn-logout-nav {
+            padding: 7px 16px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
         }
 
         /* Surface Cards */
@@ -405,11 +476,18 @@
     @yield('styles')
 </head>
 <body>
+    <div id="top-progress-bar" aria-hidden="true"></div>
+    <div id="app-loading-overlay" role="status" aria-live="polite" aria-label="Memuat">
+        <div class="loading-pill">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <span>Memproses data...</span>
+        </div>
+    </div>
 
     <header class="site-header mb-4">
         <nav class="navbar navbar-expand-lg" aria-label="Primary">
-            <div class="container-fluid px-4">
-                <a class="navbar-brand navbar-brand-custom d-flex align-items-center gap-2.5" href="{{ route('dashboard.index') }}">
+            <div class="container-fluid px-3 px-lg-4">
+                <a class="navbar-brand navbar-brand-custom d-flex align-items-center gap-3" href="{{ route('dashboard.index') }}">
                     <img src="https://gosyenpolinator.com/images/gosyen_logo.png" width="34" height="34" alt="Gosyen Logo" style="object-fit: contain;">
                     <div>
                         <span>Gosyen Assessment</span>
@@ -495,7 +573,7 @@
                         @endif
                     </ul>
 
-                    <div class="d-flex align-items-center gap-2.5 mt-2 mt-lg-0">
+                    <div class="nav-utility-group mt-3 mt-lg-0">
                         <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Ganti Tema Terang/Gelap" title="Ganti Tema (Terang / Gelap)">
                             <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
@@ -507,12 +585,12 @@
 
                         <div class="role-pill">
                             <span>Role:</span>
-                            <span class="badge {{ session('role_akses') === 'admin' ? 'bg-primary' : 'bg-success' }} px-2 py-0.5" style="font-size: 11px;">
+                            <span class="badge {{ session('role_akses') === 'admin' ? 'bg-primary' : 'bg-success' }} px-2 py-1" style="font-size: 11px;">
                                 {{ session('role_akses') === 'admin' ? 'Admin' : 'Psikolog' }}
                             </span>
                         </div>
 
-                        <a href="{{ route('logout') }}" class="btn btn-outline-danger btn-sm px-3 py-1.5 fw-semibold" style="border-radius: 8px;">Keluar</a>
+                        <a href="{{ route('logout') }}" class="btn btn-outline-danger btn-logout-nav">Keluar</a>
                     </div>
                 </div>
             </div>
@@ -602,6 +680,48 @@
                 try { stored = localStorage.getItem('color-scheme'); } catch (e) {}
                 if (!stored) applyScheme(null);
             });
+
+            // Subtle Top Progress Bar & Loading Overlay
+            var progressBar = document.getElementById('top-progress-bar');
+            var loadingOverlay = document.getElementById('app-loading-overlay');
+
+            function startProgress() {
+                if (!progressBar) return;
+                progressBar.classList.add('active');
+                progressBar.style.width = '70%';
+            }
+
+            function resetProgress() {
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    setTimeout(function () {
+                        progressBar.classList.remove('active');
+                        progressBar.style.width = '0%';
+                    }, 200);
+                }
+                if (loadingOverlay) loadingOverlay.classList.remove('show');
+            }
+
+            document.addEventListener('click', function (e) {
+                var link = e.target.closest('a[href]');
+                if (!link) return;
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || link.target === '_blank' || link.hasAttribute('download')) return;
+                if (href.includes('export') || href.includes('/pdf/') || href.includes('/word/')) return;
+                startProgress();
+            });
+
+            document.addEventListener('submit', function (e) {
+                var form = e.target;
+                if (form && form.method && form.method.toLowerCase() === 'post') {
+                    startProgress();
+                    if (loadingOverlay) loadingOverlay.classList.add('show');
+                } else {
+                    startProgress();
+                }
+            });
+
+            window.addEventListener('pageshow', resetProgress);
         })();
     </script>
     @yield('scripts')

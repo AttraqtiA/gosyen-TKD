@@ -448,23 +448,47 @@
             </div>
         </div>
 
-        <!-- Right Side: Security & Configuration -->
-        <div class="col-lg-4">
-            <div class="card-custom h-100 mb-0">
+        <!-- Right Side: Security & Quick Links -->
+        <div class="col-lg-4 d-flex flex-column gap-4">
+            <div class="card-custom mb-0">
                 <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     <h5 class="fw-bold mb-0" style="color: var(--text-primary);">Keamanan &amp; PIN Akses</h5>
                 </div>
-                <p class="text-muted small mb-4">Ganti PIN akses yang digunakan oleh Tim Psikolog untuk masuk ke dashboard evaluasi kandidat.</p>
+                <p class="text-muted small mb-3">Ganti PIN akses yang digunakan oleh Tim Psikolog untuk masuk ke dashboard evaluasi kandidat.</p>
 
                 <form action="{{ route('dashboard.pin') }}" method="POST">
                     @csrf
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label text-muted fw-semibold" style="font-size: 13px;">Masukkan PIN Psikolog Baru</label>
                         <input type="text" name="pin_baru" class="form-control form-control-custom text-center" required placeholder="Contoh: 123456" autocomplete="off" style="letter-spacing: 2px;">
                     </div>
                     <button type="submit" class="btn btn-custom btn-custom-blue w-100 fw-bold">Simpan PIN Baru</button>
                 </form>
+            </div>
+
+            <div class="card-custom mb-0 flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <h5 class="fw-bold mb-0" style="color: var(--text-primary);">Informasi Sistem &amp; Akses</h5>
+                </div>
+                <ul class="list-unstyled mb-3 small text-muted d-flex flex-column gap-2">
+                    <li class="d-flex justify-content-between">
+                        <span>Relasi Posisi &rarr; Klien:</span>
+                        <span class="fw-bold" style="color: var(--accent-emerald);">SET NULL (Aman)</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Anti-Cheat Monitor:</span>
+                        <span class="fw-bold" style="color: var(--brand-primary);">Aktif (Maks. 3x)</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Portal Ujian Kandidat:</span>
+                        <a href="{{ route('ujian.index') }}" target="_blank" class="fw-bold text-decoration-none">Buka Portal &nearr;</a>
+                    </li>
+                </ul>
+                <div class="p-3 rounded-3" style="background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-muted);">
+                    Menghapus perusahaan tidak akan menghapus posisi atau data hasil tes kandidat.
+                </div>
             </div>
         </div>
     </div>

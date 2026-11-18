@@ -370,6 +370,52 @@
             background: var(--bg-subtle);
             color: var(--text-primary);
         }
+        #top-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            z-index: 99999;
+            opacity: 0;
+            transition: width 0.28s ease, opacity 0.2s ease;
+            pointer-events: none;
+        }
+        #top-progress-bar.active { opacity: 1; }
+        #app-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.35);
+            backdrop-filter: blur(3px);
+            z-index: 99998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #app-loading-overlay.show { display: flex; }
+        .loading-pill {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 14px 24px;
+            border-radius: 14px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid var(--border-strong);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spinLoader 0.7s linear infinite;
+        }
+        @keyframes spinLoader { to { transform: rotate(360deg); } }
         .theme-toggle-pill .icon-sun { display: none; }
         .theme-toggle-pill .icon-moon { display: block; }
         :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-pill .icon-sun,
@@ -384,6 +430,13 @@
     @yield('styles')
 </head>
 <body>
+    <div id="top-progress-bar" aria-hidden="true"></div>
+    <div id="app-loading-overlay" role="status" aria-live="polite" aria-label="Memuat">
+        <div class="loading-pill">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <span>{{ __('Memproses...') }}</span>
+        </div>
+    </div>
     <div class="utility-bar">
         <div class="language-switcher" role="group" aria-label="Pilih Bahasa">
             <a href="{{ route('lang.switch', 'id') }}"
@@ -749,6 +802,42 @@
                     applyScheme(e.newValue);
                 }
             });
+
+            var progressBar = document.getElementById('top-progress-bar');
+            var loadingOverlay = document.getElementById('app-loading-overlay');
+
+            function startProgress() {
+                if (progressBar) {
+                    progressBar.classList.add('active');
+                    progressBar.style.width = '75%';
+                }
+            }
+
+            function resetProgress() {
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    setTimeout(function () {
+                        progressBar.classList.remove('active');
+                        progressBar.style.width = '0%';
+                    }, 200);
+                }
+                if (loadingOverlay) loadingOverlay.classList.remove('show');
+            }
+
+            document.addEventListener('click', function (e) {
+                var link = e.target.closest('a[href]');
+                if (!link) return;
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || link.target === '_blank') return;
+                startProgress();
+            });
+
+            document.addEventListener('submit', function () {
+                startProgress();
+                if (loadingOverlay) loadingOverlay.classList.add('show');
+            });
+
+            window.addEventListener('pageshow', resetProgress);
         })();
     </script>
     @yield('scripts')
