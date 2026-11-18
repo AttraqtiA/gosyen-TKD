@@ -12,14 +12,14 @@
         padding: 20px;
     }
     .petunjuk-container {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(14px);
-        border-radius: 24px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
         padding: 35px 30px;
-        max-width: 800px;
+        max-width: 820px;
         width: 100%;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-        animation: fadeInUp 0.4s ease-out;
+        box-shadow: var(--shadow-card);
+        animation: fadeInUp 0.35s ease-out;
     }
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -54,7 +54,7 @@
     }
 @endphp
 <div class="petunjuk-container">
-    <h2 class="text-center fw-bold mb-4" style="color: #2b3452;">
+    <h2 class="text-center fw-bold mb-4" style="color: var(--text-primary);">
         {{ __('Petunjuk Pengerjaan Sesi') }} {{ $sesi }}
         @if(($sesi == 4 && $isCustomPosisi) || ($sesi == 5 && !$isCustomPosisi)) ({{ __('Terakhir') }}) @endif
     </h2>

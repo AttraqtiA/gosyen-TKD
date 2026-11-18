@@ -129,11 +129,21 @@ class DashboardController extends Controller
         // Fetch categories
         $kategori = DB::table('norma_ist_kategori')->get();
 
-        // Fetch candidates
-        $peserta = PesertaUji::with(['jawabanSesi2', 'jawabanSesi3', 'jawabanSesi4', 'jawabanSesi5', 'jawabanSesi6'])
-            ->whereBetween('waktu_mulai', [$tgl_awal, $tgl_akhir])
-            ->orderBy('waktu_mulai', 'asc')
-            ->get();
+        // Fetch candidates with all active filters applied
+        $query = PesertaUji::with(['jawabanSesi2', 'jawabanSesi3', 'jawabanSesi4', 'jawabanSesi5', 'jawabanSesi6'])
+            ->whereBetween('waktu_mulai', [$tgl_awal, $tgl_akhir]);
+
+        if ($request->filled('nama')) {
+            $query->where('nama', 'like', '%' . $request->nama . '%');
+        }
+        if ($request->filled('posisi') && $request->posisi !== 'SEMUA') {
+            $query->where('posisi', $request->posisi);
+        }
+        if ($request->filled('perusahaan') && $request->perusahaan !== 'SEMUA') {
+            $query->where('perusahaan', $request->perusahaan);
+        }
+
+        $peserta = $query->orderBy('waktu_mulai', 'asc')->get();
 
         // Helper function for categorization
         $getDeskripsiNorma = function ($sw_score) use ($kategori) {

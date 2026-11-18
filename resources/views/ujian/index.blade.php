@@ -280,7 +280,7 @@
         </div>
         
         @if(session('banned'))
-            <div class="alert alert-danger" style="background: rgba(220, 38, 38, 0.2); border: 1px solid #dc2626; color: #00000; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: bold;">
+            <div class="alert alert-danger" style="background: rgba(220, 38, 38, 0.14); border: 1px solid #dc2626; color: var(--text-primary); padding: 14px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: 700;">
                 ⚠️ {{ session('banned') }}
             </div>
         @endif

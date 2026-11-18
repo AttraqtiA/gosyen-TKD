@@ -11,15 +11,15 @@
         padding: 20px;
     }
     .container-result {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(14px);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
         padding: 40px 30px;
-        border-radius: 24px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        border-radius: 18px;
+        box-shadow: var(--shadow-card);
         text-align: center;
         max-width: 480px;
         width: 100%;
-        animation: fadeInUp 0.4s ease-out;
+        animation: fadeInUp 0.35s ease-out;
     }
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -46,12 +46,12 @@
     }
     h1 {
         margin: 0 0 10px;
-        color: #2b3452;
+        color: var(--text-primary);
         font-size: 24px;
         font-weight: 700;
     }
     p {
-        color: #6c757d;
+        color: var(--text-muted);
         font-size: 15px;
         line-height: 1.6;
         margin-bottom: 30px;

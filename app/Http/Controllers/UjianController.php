@@ -16,7 +16,10 @@ class UjianController extends Controller
     public function index()
     {
         // Clear old sessions when starting fresh
-        session()->forget(['nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2']);
+        session()->forget(['nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save']);
+        for ($i = 1; $i <= 5; $i++) {
+            session()->forget('sesi_started_at_' . $i);
+        }
         for ($i = 1; $i <= 20; $i++) {
             session()->forget([
                 'jawab_sesi2_q' . $i,
@@ -69,11 +72,29 @@ class UjianController extends Controller
             $perusahaanVal = $request->perusahaan_lainnya;
         }
 
+        if ($request->posisi !== 'Lainnya' && $request->perusahaan !== 'Lainnya'
+            && \Illuminate\Support\Facades\Schema::hasTable('perusahaan')
+            && \Illuminate\Support\Facades\Schema::hasColumn('posisi', 'perusahaan_id')) {
+            $company = \App\Models\Perusahaan::where('nama', $perusahaanVal)->first();
+            $posisiObj = \App\Models\Posisi::where('nama', $posisiVal)->first();
+            if ($company && $posisiObj && $posisiObj->perusahaan_id !== null && (int)$posisiObj->perusahaan_id !== (int)$company->id) {
+                return redirect()->back()->withInput()->withErrors([
+                    'posisi' => __('Posisi yang dipilih tidak tersedia untuk perusahaan ini.')
+                ]);
+            }
+        }
+
+        for ($i = 1; $i <= 5; $i++) {
+            session()->forget('sesi_started_at_' . $i);
+        }
+
         session([
             'nama' => $request->nama,
             'posisi' => $posisiVal,
             'perusahaan' => $perusahaanVal,
-            'total_pelanggaran' => 0
+            'total_pelanggaran' => 0,
+            'current_sesi' => 1,
+            'ujian_ready_to_save' => false,
         ]);
 
         return redirect()->route('ujian.petunjuk', ['sesi' => 1]);
@@ -89,10 +110,19 @@ class UjianController extends Controller
             return redirect()->route('ujian.index');
         }
 
+        $currentSesi = (int) session('current_sesi', 1);
+        if ((int) $sesi !== $currentSesi) {
+            if ($currentSesi > 5) {
+                return redirect()->route('ujian.simpan');
+            }
+            return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
+        }
+
         if ($sesi == 5) {
             $posisi = session('posisi');
             $hasSesi5 = \Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5') && DB::table('bank_soal_sesi5')->where('posisi', $posisi)->exists();
             if (!$hasSesi5) {
+                session(['ujian_ready_to_save' => true]);
                 return redirect()->route('ujian.simpan');
             }
         }
@@ -110,12 +140,28 @@ class UjianController extends Controller
             return redirect()->route('ujian.index');
         }
 
+        $currentSesi = (int) session('current_sesi', 1);
+        if ((int) $sesi !== $currentSesi) {
+            if ($currentSesi > 5) {
+                return redirect()->route('ujian.simpan');
+            }
+            return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
+        }
+
         // Fetch dynamic duration from database, fallback to standard values
         $defaultDurations = [1 => 6, 2 => 7, 3 => 10, 4 => 7, 5 => 45];
         $durasiMenit = DB::table('pengaturan')
             ->where('key', "durasi_sesi{$sesi}")
             ->value('value') ?? $defaultDurations[$sesi];
-        $durasi = (int)$durasiMenit * 60; // convert to seconds
+        $totalDetik = (int)$durasiMenit * 60;
+
+        // Server-side timer persistence so page reload cannot reset exam duration
+        $timerKey = "sesi_started_at_{$sesi}";
+        if (!session()->has($timerKey)) {
+            session([$timerKey => now()->timestamp]);
+        }
+        $elapsed = now()->timestamp - (int) session($timerKey);
+        $durasi = max(0, $totalDetik - $elapsed);
 
         switch ($sesi) {
             case 1:
@@ -210,6 +256,14 @@ class UjianController extends Controller
             return redirect()->route('ujian.index');
         }
 
+        $currentSesi = (int) session('current_sesi', 1);
+        if ((int) $sesi !== $currentSesi) {
+            if ($currentSesi > 5) {
+                return redirect()->route('ujian.simpan');
+            }
+            return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
+        }
+
         // Add violations
         $pelanggaran = (int)$request->input('pelanggaran_sesi', 0);
         session(['total_pelanggaran' => session('total_pelanggaran', 0) + $pelanggaran]);
@@ -225,6 +279,7 @@ class UjianController extends Controller
             for ($i = 1; $i <= 30; $i++) {
                 session(['jawab_sesi6_q' . $i => '']);
             }
+            session(['ujian_ready_to_save' => true, 'current_sesi' => 6]);
             return redirect()->route('ujian.simpan');
         }
 
@@ -241,18 +296,21 @@ class UjianController extends Controller
                     $jawaban = $request->input('jawab_sesi2_q' . $noTampil, '');
                     session(['jawab_sesi2_q' . $idAsli => $jawaban]);
                 }
+                session(['current_sesi' => 2]);
                 return redirect()->route('ujian.petunjuk', ['sesi' => 2]);
 
             case 2:
                 for ($i = 1; $i <= 20; $i++) {
                     session(['jawab_sesi3_q' . $i => $request->input('jawab_sesi3_q' . $i, '')]);
                 }
+                session(['current_sesi' => 3]);
                 return redirect()->route('ujian.petunjuk', ['sesi' => 3]);
 
             case 3:
                 for ($i = 1; $i <= 20; $i++) {
                     session(['jawab_sesi4_q' . $i => $request->input('jawab_sesi4_q' . $i, '')]);
                 }
+                session(['current_sesi' => 4]);
                 return redirect()->route('ujian.petunjuk', ['sesi' => 4]);
 
             case 4:
@@ -263,15 +321,18 @@ class UjianController extends Controller
                 $posisi = session('posisi');
                 $hasSesi5 = \Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5') && DB::table('bank_soal_sesi5')->where('posisi', $posisi)->exists();
                 if (!$hasSesi5) {
+                    session(['ujian_ready_to_save' => true, 'current_sesi' => 6]);
                     return redirect()->route('ujian.simpan');
                 }
                 
+                session(['current_sesi' => 5]);
                 return redirect()->route('ujian.petunjuk', ['sesi' => 5]);
 
             case 5:
                 for ($i = 1; $i <= 25; $i++) {
                     session(['jawab_sesi6_q' . $i => $request->input('jawab_sesi6_q' . $i, '')]);
                 }
+                session(['ujian_ready_to_save' => true, 'current_sesi' => 6]);
                 return redirect()->route('ujian.simpan');
 
             default:
@@ -283,6 +344,11 @@ class UjianController extends Controller
     {
         if (!session()->has('nama')) {
             return redirect()->route('ujian.index');
+        }
+
+        if (!session('ujian_ready_to_save', false)) {
+            $currentSesi = (int) session('current_sesi', 1);
+            return redirect()->route('ujian.petunjuk', ['sesi' => min($currentSesi, 5)]);
         }
 
         try {
@@ -337,8 +403,11 @@ class UjianController extends Controller
             $nama = session('nama');
             // Flush session
             session()->forget([
-                'nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2'
+                'nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save'
             ]);
+            for ($i = 1; $i <= 5; $i++) {
+                session()->forget('sesi_started_at_' . $i);
+            }
             for ($i = 1; $i <= 20; $i++) {
                 session()->forget([
                     'jawab_sesi2_q' . $i,

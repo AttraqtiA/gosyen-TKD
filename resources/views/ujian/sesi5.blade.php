@@ -20,30 +20,29 @@
         box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
     }
     .case-container {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
-        border-radius: 20px;
-        padding: 25px;
-        margin-bottom: 30px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-strong);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 28px;
     }
     .case-title {
-        font-size: 17px;
+        font-size: 16.5px;
         font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 10px;
-        border-bottom: 2px solid #cbd5e1;
-        padding-bottom: 8px;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--border-strong);
+        padding-bottom: 10px;
     }
     .case-desc {
-        font-size: 15px;
-        color: #475569;
+        font-size: 14.5px;
+        color: var(--text-secondary);
         line-height: 1.7;
         margin-bottom: 20px;
-        background: white;
-        padding: 15px;
+        background: var(--bg-surface);
+        padding: 16px;
         border-radius: 12px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border);
     }
 </style>
 @endsection
@@ -100,14 +99,14 @@
                 @foreach($soalSesi5['bagian_a'] as $num => $qText)
                 <div class="question-card">
                     <div class="question-number">{{ $qCount }}</div>
-                    <p class="question-text" style="font-size: 16px; font-weight: 600; color: #1e293b; line-height: 1.6;">
+                    <p class="question-text" style="font-size: 16px; font-weight: 600; color: var(--text-primary); line-height: 1.6;">
                         {{ __($qText) }}
                     </p>
                     <textarea name="jawab_sesi6_q{{ $qCount }}" 
                               class="form-control essay-input" 
                               rows="4" 
                               placeholder="{{ __('Ketik jawaban Anda di sini secara jelas dan detail...') }}" 
-                              style="border-radius: 14px; border: 2px solid #cbd5e1; padding: 15px; font-size: 15px; width: 100%; transition: all 0.3s ease;"></textarea>
+                              style="border-radius: 12px; border: 1px solid var(--border-strong); background: var(--bg-subtle); color: var(--text-primary); padding: 14px; font-size: 15px; width: 100%; transition: all 0.2s ease;"></textarea>
                 </div>
                 @php $qCount++; @endphp
                 @endforeach
@@ -124,16 +123,16 @@
                     </div>
 
                     @foreach($case['pertanyaan'] as $subNum => $subQText)
-                    <div class="question-card" style="background: white; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                    <div class="question-card" style="background: var(--bg-surface); border: 1px solid var(--border-strong); margin-bottom: 20px;">
                         <div class="question-number">{{ $qCount }}</div>
-                        <p class="question-text" style="font-size: 15px; font-weight: 600; color: #334155; line-height: 1.6;">
+                        <p class="question-text" style="font-size: 15px; font-weight: 600; color: var(--text-primary); line-height: 1.6;">
                             {{ __($subQText) }}
                         </p>
                         <textarea name="jawab_sesi6_q{{ $qCount }}" 
                                   class="form-control essay-input" 
                                   rows="4" 
                                   placeholder="{{ __('Ketik analisis & solusi Anda di sini...') }}" 
-                                  style="border-radius: 14px; border: 2px solid #cbd5e1; padding: 15px; font-size: 15px; width: 100%; transition: all 0.3s ease;"></textarea>
+                                  style="border-radius: 12px; border: 1px solid var(--border-strong); background: var(--bg-subtle); color: var(--text-primary); padding: 14px; font-size: 15px; width: 100%; transition: all 0.2s ease;"></textarea>
                     </div>
                     @php $qCount++; @endphp
                     @endforeach

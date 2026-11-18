@@ -178,7 +178,7 @@
                 <button type="submit" class="btn btn-custom btn-custom-blue">Terapkan Filter</button>
 
                 @if(!empty($tgl_awal) && !empty($tgl_akhir))
-                    <a href="{{ route('dashboard.export', ['tgl_awal' => $tgl_awal, 'tgl_akhir' => $tgl_akhir]) }}" class="btn btn-custom btn-custom-emerald d-inline-flex align-items-center gap-1">
+                    <a href="{{ route('dashboard.export', ['tgl_awal' => $tgl_awal, 'tgl_akhir' => $tgl_akhir, 'nama' => $search_nama ?? '', 'perusahaan' => $selected_perusahaan ?? '', 'posisi' => $selected_posisi ?? '']) }}" class="btn btn-custom btn-custom-emerald d-inline-flex align-items-center gap-1">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export Excel (.xls)
                     </a>
