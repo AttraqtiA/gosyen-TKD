@@ -20,11 +20,12 @@ Route::post('/ujian/start', [UjianController::class, 'start'])->name('ujian.star
 Route::get('/ujian/petunjuk/{sesi}', [UjianController::class, 'petunjuk'])->name('ujian.petunjuk');
 Route::get('/ujian/sesi/{sesi}', [UjianController::class, 'showSesi'])->name('ujian.sesi');
 Route::post('/ujian/sesi/{sesi}', [UjianController::class, 'submitSesi'])->name('ujian.submit');
+Route::post('/ujian/pelanggaran', [UjianController::class, 'logPelanggaran'])->name('ujian.pelanggaran');
 Route::get('/ujian/simpan', [UjianController::class, 'simpan'])->name('ujian.simpan');
 
 // Dashboard Authentication Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Dashboard Management Routes

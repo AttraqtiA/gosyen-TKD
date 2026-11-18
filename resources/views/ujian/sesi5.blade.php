@@ -184,7 +184,8 @@
             }
             if (totalWaktu < 0) {
                 clearInterval(timerInterval);
-                alert("{{ __('Waktu ujian Sesi 5 habis! Seluruh jawaban Anda akan disimpan otomatis.') }}");
+                const overlay = document.getElementById('app-loading-overlay');
+                if (overlay) overlay.classList.add('show');
                 document.getElementById('formUjian').submit();
             }
             totalWaktu--;

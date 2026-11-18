@@ -121,7 +121,8 @@
             }
             if (totalWaktu < 0) {
                 clearInterval(timerInterval);
-                alert("{{ __('Waktu habis! Jawaban Anda di sesi ini akan dikirim secara otomatis.') }}");
+                const overlay = document.getElementById('app-loading-overlay');
+                if (overlay) overlay.classList.add('show');
                 document.getElementById('formUjian').submit();
             }
             totalWaktu--;

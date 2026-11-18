@@ -16,9 +16,9 @@ class UjianController extends Controller
     public function index()
     {
         // Clear old sessions when starting fresh
-        session()->forget(['nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save']);
+        session()->forget(['nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save', 'freeze_until']);
         for ($i = 1; $i <= 5; $i++) {
-            session()->forget('sesi_started_at_' . $i);
+            session()->forget(['sesi_started_at_' . $i, 'pelanggaran_sesi_' . $i]);
         }
         for ($i = 1; $i <= 20; $i++) {
             session()->forget([
@@ -84,8 +84,9 @@ class UjianController extends Controller
             }
         }
 
+        session()->forget('freeze_until');
         for ($i = 1; $i <= 5; $i++) {
-            session()->forget('sesi_started_at_' . $i);
+            session()->forget(['sesi_started_at_' . $i, 'pelanggaran_sesi_' . $i]);
         }
 
         session([
@@ -250,6 +251,35 @@ class UjianController extends Controller
         }
     }
 
+    public function logPelanggaran(Request $request)
+    {
+        if (!session()->has('nama')) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        $sesi = (int) session('current_sesi', 1);
+        $sesi = max(1, min(5, $sesi));
+
+        $sesiCount = (int) session('pelanggaran_sesi_' . $sesi, 0) + 1;
+        session(['pelanggaran_sesi_' . $sesi => $sesiCount]);
+
+        $total = 0;
+        for ($i = 1; $i <= 5; $i++) {
+            $total += (int) session('pelanggaran_sesi_' . $i, 0);
+        }
+        session([
+            'total_pelanggaran' => $total,
+            'freeze_until' => now()->timestamp + 30,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'sesi_pelanggaran' => $sesiCount,
+            'total_pelanggaran' => $total,
+            'disqualified' => $total >= 3,
+        ]);
+    }
+
     public function submitSesi(Request $request, $sesi)
     {
         if (!session()->has('nama')) {
@@ -264,9 +294,17 @@ class UjianController extends Controller
             return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
         }
 
-        // Add violations
-        $pelanggaran = (int)$request->input('pelanggaran_sesi', 0);
-        session(['total_pelanggaran' => session('total_pelanggaran', 0) + $pelanggaran]);
+        // Sync violations: take max of server-recorded and client-submitted so reload/DevTools cannot erase violations
+        $clientPelanggaran = max(0, (int) $request->input('pelanggaran_sesi', 0));
+        $serverPelanggaran = (int) session('pelanggaran_sesi_' . $sesi, 0);
+        session(['pelanggaran_sesi_' . $sesi => max($serverPelanggaran, $clientPelanggaran)]);
+        session()->forget('freeze_until');
+
+        $totalPelanggaran = 0;
+        for ($i = 1; $i <= 5; $i++) {
+            $totalPelanggaran += (int) session('pelanggaran_sesi_' . $i, 0);
+        }
+        session(['total_pelanggaran' => $totalPelanggaran]);
 
         // Immediate submission with 0 score upon 3 violations
         if (session('total_pelanggaran') >= 3) {
@@ -403,10 +441,10 @@ class UjianController extends Controller
             $nama = session('nama');
             // Flush session
             session()->forget([
-                'nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save'
+                'nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save', 'freeze_until'
             ]);
             for ($i = 1; $i <= 5; $i++) {
-                session()->forget('sesi_started_at_' . $i);
+                session()->forget(['sesi_started_at_' . $i, 'pelanggaran_sesi_' . $i]);
             }
             for ($i = 1; $i <= 20; $i++) {
                 session()->forget([

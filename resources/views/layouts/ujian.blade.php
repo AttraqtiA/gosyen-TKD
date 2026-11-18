@@ -551,11 +551,36 @@
             const formUjian = document.getElementById('formUjian');
             if (!formUjian) return;
 
+            // Hide language switcher during active timed exam so candidate cannot lose answers mid-session
+            const langSwitcher = document.querySelector('.language-switcher');
+            if (langSwitcher) langSwitcher.style.display = 'none';
+
+            // Block copy/cut/paste, right-click, and DevTools shortcuts during active exam
+            document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+            ['copy', 'cut', 'paste'].forEach(function(evt) {
+                document.addEventListener(evt, function(e) { e.preventDefault(); });
+            });
+            document.addEventListener('keydown', function(e) {
+                const key = (e.key || '').toUpperCase();
+                if (
+                    e.key === 'F12' ||
+                    ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'J', 'C'].includes(key)) ||
+                    ((e.ctrlKey || e.metaKey) && key === 'U')
+                ) {
+                    e.preventDefault();
+                }
+            });
+
             const overlay = document.getElementById('freeze-overlay');
             const counter = document.getElementById('freeze-countdown');
             let isFrozen = false;
+            let isSubmitting = false;
             let freezeTimer;
-            let freezeLeft = 13;
+            let freezeLeft = 30;
+
+            formUjian.addEventListener('submit', function() {
+                isSubmitting = true;
+            });
 
             let globalAudioCtx = null;
             function initAudio() {
@@ -652,63 +677,26 @@
                 }
             }
 
-            function triggerFreeze() {
-                if (isFrozen) return;
-                isFrozen = true;
-                
-                // Increment violations input
-                const pelanggaranInput = document.getElementById('pelanggaran_sesi');
-                let currentSessionViolations = 0;
-                if (pelanggaranInput) {
-                    currentSessionViolations = parseInt(pelanggaranInput.value) || 0;
-                    currentSessionViolations += 1;
-                    pelanggaranInput.value = currentSessionViolations;
-                }
-
-                // Check total violations across all sessions
-                let previousViolations = {{ session('total_pelanggaran', 0) }};
-                let totalViolations = previousViolations + currentSessionViolations;
-
-                // Reset test if total violations reaches 3
-                if (totalViolations >= 3) {
-                    alert("{{ __('Anda telah melakukan pelanggaran keluar tab sebanyak 3 kali. Ujian Anda dibatalkan dan akan langsung dikumpulkan dengan nilai 0.') }}");
-                    const formUjian = document.getElementById('formUjian');
-                    if (formUjian) {
-                        formUjian.submit();
-                    } else {
-                        window.location.href = "{{ route('ujian.simpan') }}";
-                    }
-                    return;
-                }
-
-                // Show overlay
+            function startFreezeCountdown(seconds, totalViolations) {
                 overlay.classList.remove('hidden');
-                freezeLeft = 30;
+                freezeLeft = seconds;
                 counter.innerText = freezeLeft;
-                
-                // Update warning text based on remaining attempts
+
                 let remainingAttempts = 3 - totalViolations;
                 let warningText = document.getElementById('freeze-warning-text');
                 const isEn = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
                 if (warningText) {
                     if (remainingAttempts > 0) {
-                        if (isEn) {
-                            warningText.innerText = `Strict Warning! If you leave the exam tab ${remainingAttempts} more time(s), the exam will be automatically stopped and submitted with a score of 0.`;
-                        } else {
-                            warningText.innerText = `Peringatan Keras! Jika Anda keluar dari tab ujian ${remainingAttempts} kali lagi, ujian akan otomatis dihentikan dan disubmit dengan nilai 0.`;
-                        }
+                        warningText.innerText = isEn
+                            ? `Strict Warning! If you leave the exam tab ${remainingAttempts} more time(s), the exam will be automatically stopped and submitted with a score of 0.`
+                            : `Peringatan Keras! Jika Anda keluar dari tab ujian ${remainingAttempts} kali lagi, ujian akan otomatis dihentikan dan disubmit dengan nilai 0.`;
                     } else {
-                        if (isEn) {
-                            warningText.innerText = `Violation limit reached. Processing exam submission...`;
-                        } else {
-                            warningText.innerText = `Batas pelanggaran telah tercapai. Ujian sedang diproses...`;
-                        }
+                        warningText.innerText = isEn
+                            ? `Violation limit reached. Processing exam submission...`
+                            : `Batas pelanggaran telah tercapai. Ujian sedang diproses...`;
                     }
                 }
 
-                applyPenaltyEffects();
-
-                // Freeze countdown interval
                 clearInterval(freezeTimer);
                 freezeTimer = setInterval(function() {
                     freezeLeft--;
@@ -721,6 +709,63 @@
                         overlay.style.backgroundColor = '';
                     }
                 }, 1000);
+            }
+
+            // Resume active freeze if candidate hit F5/Reload during penalty
+            const serverFreezeLeft = {{ max(0, (int)session('freeze_until', 0) - now()->timestamp) }};
+            if (serverFreezeLeft > 0) {
+                isFrozen = true;
+                startFreezeCountdown(serverFreezeLeft, {{ (int)session('total_pelanggaran', 0) }});
+            }
+
+            function triggerFreeze() {
+                if (isFrozen || isSubmitting) return;
+                isFrozen = true;
+
+                // Increment local hidden input
+                const pelanggaranInput = document.getElementById('pelanggaran_sesi');
+                let currentSessionViolations = 0;
+                if (pelanggaranInput) {
+                    currentSessionViolations = parseInt(pelanggaranInput.value) || 0;
+                    currentSessionViolations += 1;
+                    pelanggaranInput.value = currentSessionViolations;
+                }
+
+                // Immediately persist violation to server so page reload (F5) cannot erase it
+                const csrfInput = formUjian.querySelector('input[name="_token"]');
+                if (csrfInput) {
+                    fetch("{{ route('ujian.pelanggaran') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfInput.value,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({}),
+                        keepalive: true
+                    }).then(function(res) { return res.ok ? res.json() : null; })
+                      .then(function(data) {
+                          if (data && data.disqualified && !isSubmitting) {
+                              isSubmitting = true;
+                              formUjian.submit();
+                          }
+                      }).catch(function() {});
+                }
+
+                let previousViolations = {{ (int)session('total_pelanggaran', 0) }};
+                let totalViolations = previousViolations + currentSessionViolations;
+
+                // Auto-submit immediately without blocking alert() dialog
+                if (totalViolations >= 3) {
+                    isSubmitting = true;
+                    overlay.classList.remove('hidden');
+                    counter.innerText = '0';
+                    formUjian.submit();
+                    return;
+                }
+
+                startFreezeCountdown(30, totalViolations);
+                applyPenaltyEffects();
             }
 
             // --- Screen Wake Lock API ---
@@ -756,6 +801,12 @@
             window.addEventListener('blur', function() {
                 triggerFreeze();
             });
+            // Safety net for split-screen / docked DevTools / missed blur events
+            setInterval(function() {
+                if (!document.hasFocus() && !isFrozen && !isSubmitting) {
+                    triggerFreeze();
+                }
+            }, 2000);
         });
 
         (function () {
