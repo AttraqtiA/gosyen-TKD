@@ -105,7 +105,7 @@
         .main-wrapper { max-width: 1200px; margin: auto; padding-top: 24px; }
         .hero { text-align: center; color: var(--hero-text); margin-bottom: 28px; }
         .hero h1 { font-size: 32px; margin-bottom: 8px; font-weight: 800; letter-spacing: -0.5px; }
-        .hero p { color: var(--text-muted); font-size: 15px; }
+        .hero p { color: var(--text-secondary); font-size: 15px; font-weight: 500; }
         
         .layout { display: grid; grid-template-columns: 310px 1fr; gap: 24px; align-items: start; }
         .sidebar, .content {
@@ -119,9 +119,23 @@
         .logo-box img { width: 76px; height: 76px; object-fit: contain; margin-bottom: 10px; }
         
         .badge-custom {
-            display: inline-block; background: rgba(37,99,235,0.12);
+            display: inline-block; background: rgba(37,99,235,0.14);
             color: var(--primary); padding: 6px 14px;
             border-radius: 999px; font-size: 12.5px; font-weight: 700;
+            border: 1px solid rgba(37,99,235,0.28);
+        }
+        :root:has(> head > meta[name="color-scheme"][content="dark"]) .badge-custom,
+        :root[data-theme="dark"] .badge-custom {
+            background: rgba(59,130,246,0.2);
+            color: #93c5fd;
+            border-color: rgba(147,197,253,0.35);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .badge-custom {
+                background: rgba(59,130,246,0.2);
+                color: #93c5fd;
+                border-color: rgba(147,197,253,0.35);
+            }
         }
         .info-card {
             background: var(--bg-subtle); border: 1px solid var(--border);

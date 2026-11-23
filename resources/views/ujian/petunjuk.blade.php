@@ -28,10 +28,12 @@
     .gambar-contoh {
         max-width: 100%;
         height: auto;
-        border: 2px solid #856404;
-        border-radius: 8px;
+        border: 2px solid var(--border-strong);
+        border-radius: 10px;
         margin: 15px 0;
         display: block;
+        background: #ffffff;
+        padding: 8px;
     }
      .sanksi-list {
         padding-left: 30px;

@@ -59,7 +59,7 @@
                 @php $no = $index + 1; @endphp
                 <div class="question-card">
                     <div class="question-number">{{ $no }}</div>
-                    <p class="question-text" style="font-size: 17px; font-weight: 600; color: #1e293b;">
+                    <p class="question-text" style="font-size: 17px; font-weight: 700; color: var(--text-primary);">
                         {{ __($s->pertanyaan) }}
                     </p>
                     

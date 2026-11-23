@@ -66,7 +66,7 @@
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div class="question-number" style="margin-bottom: 0;">{{ $no }}</div>
-                            <div class="deret" style="font-size: 20px; font-weight: 600; letter-spacing: 2px; color: #1e293b;">
+                            <div class="deret" style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: var(--text-primary); font-variant-numeric: tabular-nums;">
                                 {{ $s->deret_angka }} ...
                             </div>
                         </div>
@@ -76,7 +76,7 @@
                                class="input-jawaban" 
                                name="jawab_sesi4_q{{ $no }}" 
                                placeholder="..." 
-                               style="width: 100px; padding: 12px; font-size: 18px; text-align: center; border: 2px solid var(--primary); border-radius: 12px; outline: none; font-weight: bold; transition: all 0.3s ease;">
+                               style="width: 110px; padding: 12px; font-size: 18px; text-align: center; border: 2px solid var(--primary); border-radius: 12px; outline: none; font-weight: 700; background: var(--bg-subtle); color: var(--text-primary); transition: all 0.2s ease;">
                     </div>
                 </div>
                 @endforeach

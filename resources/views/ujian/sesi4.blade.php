@@ -74,7 +74,7 @@
                         {{ __('Pilihlah salah satu opsi (A, B, C, D, atau E) yang merupakan jawaban paling tepat:') }}
                     </p>
                     <div style="text-align: center; margin-bottom: 20px;">
-                        <img src="{{ asset($path_gambar) }}" alt="{{ __('Soal') }} {{ $nomor }}" style="max-width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border);">
+                        <img src="{{ asset($path_gambar) }}" alt="{{ __('Soal') }} {{ $nomor }}" style="max-width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border-strong); background: #ffffff; padding: 8px;">
                     </div>
 
                     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
