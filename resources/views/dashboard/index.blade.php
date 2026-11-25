@@ -223,16 +223,8 @@
                     @forelse($peserta as $index => $p)
                     @php
                         $a = $p->analysis;
-                        $badgeClass = 'bg-rec-yellow';
-                        if (str_contains($a['kategori_akhir'], 'DIREKOMENDASIKAN DENGAN CATATAN')) {
-                            $badgeClass = 'bg-rec-yellow';
-                        } elseif (str_contains($a['kategori_akhir'], 'DIREKOMENDASIKAN')) {
-                            $badgeClass = 'bg-rec-green';
-                        } elseif (str_contains($a['kategori_akhir'], 'DIPERTIMBANGKAN') || str_contains($a['kategori_akhir'], 'KURANG')) {
-                            $badgeClass = 'bg-rec-orange';
-                        } else {
-                            $badgeClass = 'bg-rec-red';
-                        }
+                        $badgeClass = $a['recommendation_badge_class'] ?? 'bg-rec-yellow';
+                        $katIstClass = $a['ist_badge_class'] ?? 'bg-secondary text-white';
                     @endphp
                     <tr>
                         <td class="text-muted fw-semibold">{{ $index + 1 }}</td>
@@ -253,18 +245,6 @@
                         <td class="fw-semibold">{{ $a['sw_fa'] }}</td>
                         <td class="fw-bold" style="color: var(--brand-primary);">{{ $a['total_sw'] }}</td>
                         <td>
-                            @php
-                                $katIstClass = 'bg-secondary text-white';
-                                if (str_contains($a['kategori_ist'], 'Tinggi')) {
-                                    $katIstClass = 'bg-success text-white';
-                                } elseif (str_contains($a['kategori_ist'], 'Cukup') || str_contains($a['kategori_ist'], 'Sedang')) {
-                                    $katIstClass = 'bg-info text-dark';
-                                } elseif (str_contains($a['kategori_ist'], 'Rendah')) {
-                                    $katIstClass = 'bg-warning text-dark';
-                                } elseif (str_contains($a['kategori_ist'], 'Diskualifikasi')) {
-                                    $katIstClass = 'bg-danger text-white';
-                                }
-                            @endphp
                             <span class="badge {{ $katIstClass }} fw-bold px-2.5 py-1">{{ $a['kategori_ist'] }}</span>
                         </td>
                         <td>

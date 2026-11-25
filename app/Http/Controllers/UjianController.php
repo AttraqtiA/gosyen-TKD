@@ -2,45 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\PesertaUji;
+use App\Enums\ExamSession;
 use App\Models\JawabanSesi2;
 use App\Models\JawabanSesi3;
 use App\Models\JawabanSesi4;
 use App\Models\JawabanSesi5;
 use App\Models\JawabanSesi6;
+use App\Models\Perusahaan;
+use App\Models\PesertaUji;
+use App\Models\Posisi;
+use App\Services\ExamStateMachine;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UjianController extends Controller
 {
+    public function __construct(
+        private readonly ExamStateMachine $examState = new ExamStateMachine()
+    ) {}
+
     public function index()
     {
-        // Clear old sessions when starting fresh
-        session()->forget(['nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save', 'freeze_until']);
-        for ($i = 1; $i <= 5; $i++) {
-            session()->forget(['sesi_started_at_' . $i, 'pelanggaran_sesi_' . $i]);
-        }
-        for ($i = 1; $i <= 20; $i++) {
-            session()->forget([
-                'jawab_sesi2_q' . $i,
-                'jawab_sesi3_q' . $i,
-                'jawab_sesi4_q' . $i,
-                'jawab_sesi5_q' . $i
-            ]);
-        }
-        for ($i = 1; $i <= 25; $i++) {
-            session()->forget('jawab_sesi6_q' . $i);
-        }
+        $this->examState->clearAttemptSession();
 
-        $posisiList = \App\Models\Posisi::orderBy('nama', 'asc')->get();
-        $perusahaanList = \Illuminate\Support\Facades\Schema::hasTable('perusahaan')
-            ? \App\Models\Perusahaan::orderBy('nama', 'asc')->get()
+        $posisiList = Posisi::orderBy('nama', 'asc')->get();
+        $perusahaanList = Schema::hasTable('perusahaan')
+            ? Perusahaan::orderBy('nama', 'asc')->get()
             : collect([
                 (object) ['id' => null, 'nama' => 'PT. GOSYEN POLINATOR INDONESIA'],
                 (object) ['id' => null, 'nama' => 'PT. MAJU ANUGRAH JAYA UNGGUL'],
                 (object) ['id' => null, 'nama' => 'PT. PANEN ANUGERAH NUSINDO'],
                 (object) ['id' => null, 'nama' => 'PT DWI TUNGGAL MULIA KIMIA'],
             ]);
+
         return view('ujian.index', compact('posisiList', 'perusahaanList'));
     }
 
@@ -60,7 +55,7 @@ class UjianController extends Controller
             $posisiVal = $request->posisi_lainnya;
         } else {
             $request->validate([
-                 'posisi' => 'required|string|exists:posisi,nama',
+                'posisi' => 'required|string|exists:posisi,nama',
             ]);
         }
 
@@ -72,321 +67,119 @@ class UjianController extends Controller
             $perusahaanVal = $request->perusahaan_lainnya;
         }
 
-        if ($request->posisi !== 'Lainnya' && $request->perusahaan !== 'Lainnya'
-            && \Illuminate\Support\Facades\Schema::hasTable('perusahaan')
-            && \Illuminate\Support\Facades\Schema::hasColumn('posisi', 'perusahaan_id')) {
-            $company = \App\Models\Perusahaan::where('nama', $perusahaanVal)->first();
-            $posisiObj = \App\Models\Posisi::where('nama', $posisiVal)->first();
-            if ($company && $posisiObj && $posisiObj->perusahaan_id !== null && (int)$posisiObj->perusahaan_id !== (int)$company->id) {
+        if (
+            $request->posisi !== 'Lainnya'
+            && $request->perusahaan !== 'Lainnya'
+            && Schema::hasTable('perusahaan')
+            && Schema::hasColumn('posisi', 'perusahaan_id')
+        ) {
+            $company = Perusahaan::where('nama', $perusahaanVal)->first();
+            $posisiObj = Posisi::where('nama', $posisiVal)->first();
+            if ($company && $posisiObj && $posisiObj->perusahaan_id !== null && (int) $posisiObj->perusahaan_id !== (int) $company->id) {
                 return redirect()->back()->withInput()->withErrors([
                     'posisi' => __('Posisi yang dipilih tidak tersedia untuk perusahaan ini.')
                 ]);
             }
         }
 
-        session()->forget('freeze_until');
-        for ($i = 1; $i <= 5; $i++) {
-            session()->forget(['sesi_started_at_' . $i, 'pelanggaran_sesi_' . $i]);
-        }
+        $this->examState->start($request->nama, $posisiVal, $perusahaanVal);
 
-        session([
-            'nama' => $request->nama,
-            'posisi' => $posisiVal,
-            'perusahaan' => $perusahaanVal,
-            'total_pelanggaran' => 0,
-            'current_sesi' => 1,
-            'ujian_ready_to_save' => false,
-        ]);
-
-        return redirect()->route('ujian.petunjuk', ['sesi' => 1]);
+        return redirect()->route('ujian.petunjuk', ['sesi' => ExamSession::WA->value]);
     }
 
     public function petunjuk($sesi)
     {
-        if (!session()->has('nama')) {
-            return redirect()->route('ujian.index');
+        if ($redirect = $this->examState->guardInstructions((int) $sesi)) {
+            return $redirect;
         }
 
-        if ($sesi < 1 || $sesi > 5) {
-            return redirect()->route('ujian.index');
-        }
+        $sessionEnum = ExamSession::from((int) $sesi);
+        $isCustomPosisi = !$this->examState->hasSesi5();
+        $totalSessions = $this->examState->totalSessionsFor();
+        $isLastSession = $this->examState->isLastSession($sessionEnum);
+        $durasiMenit = $sessionEnum->durationMinutes();
 
-        $currentSesi = (int) session('current_sesi', 1);
-        if ((int) $sesi !== $currentSesi) {
-            if ($currentSesi > 5) {
-                return redirect()->route('ujian.simpan');
-            }
-            return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
-        }
-
-        if ($sesi == 5) {
-            $posisi = session('posisi');
-            $hasSesi5 = \Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5') && DB::table('bank_soal_sesi5')->where('posisi', $posisi)->exists();
-            if (!$hasSesi5) {
-                session(['ujian_ready_to_save' => true]);
-                return redirect()->route('ujian.simpan');
-            }
-        }
-
-        return view('ujian.petunjuk', compact('sesi'));
+        return view('ujian.petunjuk', compact(
+            'sesi',
+            'isCustomPosisi',
+            'totalSessions',
+            'isLastSession',
+            'durasiMenit'
+        ));
     }
 
     public function showSesi($sesi)
     {
-        if (!session()->has('nama')) {
-            return redirect()->route('ujian.index');
+        if ($redirect = $this->examState->enterSession((int) $sesi)) {
+            return $redirect;
         }
 
-        if ($sesi < 1 || $sesi > 5) {
-            return redirect()->route('ujian.index');
-        }
+        $sessionEnum = ExamSession::from((int) $sesi);
+        $durasiMenit = $sessionEnum->durationMinutes();
+        $durasi = $this->examState->remainingSeconds($sessionEnum);
+        $isCustomPosisi = !$this->examState->hasSesi5();
+        $totalSessions = $this->examState->totalSessionsFor();
+        $isLastSession = $this->examState->isLastSession($sessionEnum);
+        $criticalThreshold = $sessionEnum->criticalThresholdSeconds();
 
-        $currentSesi = (int) session('current_sesi', 1);
-        if ((int) $sesi !== $currentSesi) {
-            if ($currentSesi > 5) {
-                return redirect()->route('ujian.simpan');
-            }
-            return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
-        }
+        $sharedMeta = compact(
+            'durasi',
+            'durasiMenit',
+            'isCustomPosisi',
+            'totalSessions',
+            'isLastSession',
+            'criticalThreshold'
+        );
 
-        // Fetch dynamic duration from database, fallback to standard values
-        $defaultDurations = [1 => 6, 2 => 7, 3 => 10, 4 => 7, 5 => 45];
-        $durasiMenit = DB::table('pengaturan')
-            ->where('key', "durasi_sesi{$sesi}")
-            ->value('value') ?? $defaultDurations[$sesi];
-        $totalDetik = (int)$durasiMenit * 60;
-
-        // Server-side timer persistence so page reload cannot reset exam duration
-        $timerKey = "sesi_started_at_{$sesi}";
-        if (!session()->has($timerKey)) {
-            session([$timerKey => now()->timestamp]);
-        }
-        $elapsed = now()->timestamp - (int) session($timerKey);
-        $durasi = max(0, $totalDetik - $elapsed);
-
-        switch ($sesi) {
-            case 1:
-                if (!session()->has('soal_sesi2')) {
-                    $soalRaw = DB::table('bank_soal_sesi2')->inRandomOrder()->limit(20)->get();
-                    $soalAcak = [];
-                    $nomorGlobal = 1;
-
-                    foreach ($soalRaw as $row) {
-                        $idSoalAsli = $row->id_soal;
-                        $opsiAsli = [
-                            'A' => $row->opsi_a,
-                            'B' => $row->opsi_b,
-                            'C' => $row->opsi_c,
-                            'D' => $row->opsi_d,
-                            'E' => $row->opsi_e
-                        ];
-
-                        $kunciOpsi = array_keys($opsiAsli);
-                        shuffle($kunciOpsi);
-
-                        $opsiTampil = [];
-                        $labelBaru = ['A', 'B', 'C', 'D', 'E'];
-                        foreach ($kunciOpsi as $idx => $labelLama) {
-                            $opsiTampil[$labelBaru[$idx]] = [
-                                'teks' => $opsiAsli[$labelLama],
-                                'asli' => $labelLama
-                            ];
-                        }
-
-                        $kunci = DB::table('kunci_jawaban')
-                            ->where('nama_sesi', 'sesi2')
-                            ->where('no_soal', $idSoalAsli)
-                            ->first();
-
-                        $soalAcak[] = [
-                            'no_tampil' => $nomorGlobal,
-                            'id_asli' => $idSoalAsli,
-                            'opsi' => $opsiTampil,
-                            'kunci_asli' => $kunci ? $kunci->jawaban_benar : ''
-                        ];
-
-                        $nomorGlobal++;
-                    }
-
-                    session(['soal_sesi2' => $soalAcak]);
-                }
-
-                $soal = session('soal_sesi2');
-                return view('ujian.sesi1', compact('soal', 'durasi'));
-
-            case 2:
-                $soal = DB::table('bank_soal_sesi3')->orderBy('id_soal', 'asc')->get();
-                return view('ujian.sesi2', compact('soal', 'durasi'));
-
-            case 3:
-                $soal = DB::table('bank_soal_sesi4')->orderBy('id_soal', 'asc')->get();
-                return view('ujian.sesi3', compact('soal', 'durasi'));
-
-            case 4:
-                $soalSesi4 = [
-                    1 => "gambar/visual_reasoning/1.png", 2 => "gambar/visual_reasoning/2.png",
-                    3 => "gambar/visual_reasoning/3.png", 4 => "gambar/visual_reasoning/4.png",
-                    5 => "gambar/visual_reasoning/5.png", 6 => "gambar/visual_reasoning/6.png",
-                    7 => "gambar/visual_reasoning/7.png", 8 => "gambar/visual_reasoning/8.png",
-                    9 => "gambar/visual_reasoning/9.png", 10 => "gambar/visual_reasoning/10.png",
-                    11 => "gambar/visual_reasoning/11.png", 12 => "gambar/visual_reasoning/12.png",
-                    13 => "gambar/visual_reasoning/13.png", 14 => "gambar/visual_reasoning/14.png",
-                    15 => "gambar/visual_reasoning/15.png", 16 => "gambar/visual_reasoning/16.png",
-                    17 => "gambar/visual_reasoning/17.png", 18 => "gambar/visual_reasoning/18.png",
-                    19 => "gambar/visual_reasoning/19.png", 20 => "gambar/visual_reasoning/20.png",
-                ];
-                return view('ujian.sesi4', compact('soalSesi4', 'durasi'));
-
-            case 5:
-                $posisi = session('posisi');
-                $hasSesi5 = \Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5') && DB::table('bank_soal_sesi5')->where('posisi', $posisi)->exists();
-                if (!$hasSesi5) {
-                    return redirect()->route('ujian.simpan');
-                }
-                $soalSesi5 = $this->translateSesi5Array($this->getSoalSesi5($posisi), $posisi);
-                return view('ujian.sesi5', compact('soalSesi5', 'posisi', 'durasi'));
-
-            default:
-                return redirect()->route('ujian.index');
-        }
+        return match ($sessionEnum) {
+            ExamSession::WA => view($sessionEnum->viewName(), array_merge($sharedMeta, [
+                'soal' => $this->getOrBuildSesi1Questions(),
+            ])),
+            ExamSession::AN => view($sessionEnum->viewName(), array_merge($sharedMeta, [
+                'soal' => DB::table('bank_soal_sesi3')->orderBy('id_soal', 'asc')->get(),
+            ])),
+            ExamSession::ZR => view($sessionEnum->viewName(), array_merge($sharedMeta, [
+                'soal' => DB::table('bank_soal_sesi4')->orderBy('id_soal', 'asc')->get(),
+            ])),
+            ExamSession::FA => view($sessionEnum->viewName(), array_merge($sharedMeta, [
+                'soalSesi4' => $this->getSesi4Images(),
+            ])),
+            ExamSession::ESSAY => view($sessionEnum->viewName(), array_merge($sharedMeta, [
+                'posisi' => session('posisi'),
+                'soalSesi5' => $this->translateSesi5Array($this->getSoalSesi5(session('posisi')), session('posisi')),
+            ])),
+        };
     }
 
     public function logPelanggaran(Request $request)
     {
-        if (!session()->has('nama')) {
+        if (!$this->examState->hasActiveAttempt()) {
             return response()->json(['ok' => false], 401);
         }
 
-        $sesi = (int) session('current_sesi', 1);
-        $sesi = max(1, min(5, $sesi));
-
-        $sesiCount = (int) session('pelanggaran_sesi_' . $sesi, 0) + 1;
-        session(['pelanggaran_sesi_' . $sesi => $sesiCount]);
-
-        $total = 0;
-        for ($i = 1; $i <= 5; $i++) {
-            $total += (int) session('pelanggaran_sesi_' . $i, 0);
-        }
-        session([
-            'total_pelanggaran' => $total,
-            'freeze_until' => now()->timestamp + 30,
-        ]);
-
-        return response()->json([
-            'ok' => true,
-            'sesi_pelanggaran' => $sesiCount,
-            'total_pelanggaran' => $total,
-            'disqualified' => $total >= 3,
-        ]);
+        return response()->json($this->examState->recordViolation());
     }
 
     public function submitSesi(Request $request, $sesi)
     {
-        if (!session()->has('nama')) {
-            return redirect()->route('ujian.index');
+        if ($redirect = $this->examState->guardAndSyncSubmit((int) $sesi, (int) $request->input('pelanggaran_sesi', 0))) {
+            return $redirect;
         }
 
-        $currentSesi = (int) session('current_sesi', 1);
-        if ((int) $sesi !== $currentSesi) {
-            if ($currentSesi > 5) {
-                return redirect()->route('ujian.simpan');
-            }
-            return redirect()->route('ujian.petunjuk', ['sesi' => $currentSesi]);
-        }
+        $sessionEnum = ExamSession::from((int) $sesi);
 
-        // Sync violations: take max of server-recorded and client-submitted so reload/DevTools cannot erase violations
-        $clientPelanggaran = max(0, (int) $request->input('pelanggaran_sesi', 0));
-        $serverPelanggaran = (int) session('pelanggaran_sesi_' . $sesi, 0);
-        session(['pelanggaran_sesi_' . $sesi => max($serverPelanggaran, $clientPelanggaran)]);
-        session()->forget('freeze_until');
+        match ($sessionEnum) {
+            ExamSession::WA => $this->storeSesi1Answers($request),
+            ExamSession::AN, ExamSession::ZR, ExamSession::FA, ExamSession::ESSAY => $this->storeSequentialAnswers($request, $sessionEnum),
+        };
 
-        $totalPelanggaran = 0;
-        for ($i = 1; $i <= 5; $i++) {
-            $totalPelanggaran += (int) session('pelanggaran_sesi_' . $i, 0);
-        }
-        session(['total_pelanggaran' => $totalPelanggaran]);
-
-        // Immediate submission with 0 score upon 3 violations
-        if (session('total_pelanggaran') >= 3) {
-            for ($i = 1; $i <= 20; $i++) {
-                session(['jawab_sesi2_q' . $i => '']);
-                session(['jawab_sesi3_q' . $i => '']);
-                session(['jawab_sesi4_q' . $i => '']);
-                session(['jawab_sesi5_q' . $i => '']);
-            }
-            for ($i = 1; $i <= 30; $i++) {
-                session(['jawab_sesi6_q' . $i => '']);
-            }
-            session(['ujian_ready_to_save' => true, 'current_sesi' => 6]);
-            return redirect()->route('ujian.simpan');
-        }
-
-        switch ($sesi) {
-            case 1:
-                $soalAcak = session('soal_sesi2', []);
-                for ($i = 1; $i <= 20; $i++) {
-                    session(['jawab_sesi2_q' . $i => '']);
-                }
-
-                foreach ($soalAcak as $soal) {
-                    $noTampil = $soal['no_tampil'];
-                    $idAsli = $soal['id_asli'];
-                    $jawaban = $request->input('jawab_sesi2_q' . $noTampil, '');
-                    session(['jawab_sesi2_q' . $idAsli => $jawaban]);
-                }
-                session(['current_sesi' => 2]);
-                return redirect()->route('ujian.petunjuk', ['sesi' => 2]);
-
-            case 2:
-                for ($i = 1; $i <= 20; $i++) {
-                    session(['jawab_sesi3_q' . $i => $request->input('jawab_sesi3_q' . $i, '')]);
-                }
-                session(['current_sesi' => 3]);
-                return redirect()->route('ujian.petunjuk', ['sesi' => 3]);
-
-            case 3:
-                for ($i = 1; $i <= 20; $i++) {
-                    session(['jawab_sesi4_q' . $i => $request->input('jawab_sesi4_q' . $i, '')]);
-                }
-                session(['current_sesi' => 4]);
-                return redirect()->route('ujian.petunjuk', ['sesi' => 4]);
-
-            case 4:
-                for ($i = 1; $i <= 20; $i++) {
-                    session(['jawab_sesi5_q' . $i => $request->input('jawab_sesi5_q' . $i, '')]);
-                }
-                
-                $posisi = session('posisi');
-                $hasSesi5 = \Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5') && DB::table('bank_soal_sesi5')->where('posisi', $posisi)->exists();
-                if (!$hasSesi5) {
-                    session(['ujian_ready_to_save' => true, 'current_sesi' => 6]);
-                    return redirect()->route('ujian.simpan');
-                }
-                
-                session(['current_sesi' => 5]);
-                return redirect()->route('ujian.petunjuk', ['sesi' => 5]);
-
-            case 5:
-                for ($i = 1; $i <= 25; $i++) {
-                    session(['jawab_sesi6_q' . $i => $request->input('jawab_sesi6_q' . $i, '')]);
-                }
-                session(['ujian_ready_to_save' => true, 'current_sesi' => 6]);
-                return redirect()->route('ujian.simpan');
-
-            default:
-                return redirect()->route('ujian.index');
-        }
+        return $this->examState->advanceAfterSubmit($sessionEnum);
     }
 
     public function simpan()
     {
-        if (!session()->has('nama')) {
-            return redirect()->route('ujian.index');
-        }
-
-        if (!session('ujian_ready_to_save', false)) {
-            $currentSesi = (int) session('current_sesi', 1);
-            return redirect()->route('ujian.petunjuk', ['sesi' => min($currentSesi, 5)]);
+        if ($redirect = $this->examState->guardSave()) {
+            return $redirect;
         }
 
         try {
@@ -396,88 +189,41 @@ class UjianController extends Controller
                 'nama' => session('nama'),
                 'posisi' => session('posisi'),
                 'perusahaan' => session('perusahaan', '-'),
-                'total_pelanggaran' => session('total_pelanggaran', 0),
+                'total_pelanggaran' => $this->examState->totalViolations(),
             ]);
 
             $idPeserta = $peserta->id_peserta;
 
-            // Save Sesi 1 (WA) answers
-            $jawabSesi2 = ['id_peserta' => $idPeserta];
-            for ($i = 1; $i <= 20; $i++) {
-                $jawabSesi2['q' . $i] = session('jawab_sesi2_q' . $i) ?: null;
-            }
-            JawabanSesi2::create($jawabSesi2);
-
-            // Save Sesi 2 (AN) answers
-            $jawabSesi3 = ['id_peserta' => $idPeserta];
-            for ($i = 1; $i <= 20; $i++) {
-                $jawabSesi3['q' . $i] = session('jawab_sesi3_q' . $i) ?: null;
-            }
-            JawabanSesi3::create($jawabSesi3);
-
-            // Save Sesi 3 (ZR) answers
-            $jawabSesi4 = ['id_peserta' => $idPeserta];
-            for ($i = 1; $i <= 20; $i++) {
-                $jawabSesi4['q' . $i] = session('jawab_sesi4_q' . $i) ?: null;
-            }
-            JawabanSesi4::create($jawabSesi4);
-
-            // Save Sesi 4 (FA) answers
-            $jawabSesi5 = ['id_peserta' => $idPeserta];
-            for ($i = 1; $i <= 20; $i++) {
-                $jawabSesi5['q' . $i] = session('jawab_sesi5_q' . $i) ?: null;
-            }
-            JawabanSesi5::create($jawabSesi5);
-
-            // Save Sesi 5 (Essay) answers
-            $jawabSesi6 = ['id_peserta' => $idPeserta];
-            for ($i = 1; $i <= 25; $i++) {
-                $jawabSesi6['q' . $i] = session('jawab_sesi6_q' . $i) ?: null;
-            }
-            JawabanSesi6::create($jawabSesi6);
+            JawabanSesi2::create($this->extractAnswersPayload($idPeserta, ExamSession::WA));
+            JawabanSesi3::create($this->extractAnswersPayload($idPeserta, ExamSession::AN));
+            JawabanSesi4::create($this->extractAnswersPayload($idPeserta, ExamSession::ZR));
+            JawabanSesi5::create($this->extractAnswersPayload($idPeserta, ExamSession::FA));
+            JawabanSesi6::create($this->extractAnswersPayload($idPeserta, ExamSession::ESSAY));
 
             DB::commit();
 
             $nama = session('nama');
-            // Flush session
-            session()->forget([
-                'nama', 'posisi', 'perusahaan', 'total_pelanggaran', 'soal_sesi2', 'current_sesi', 'ujian_ready_to_save', 'freeze_until'
-            ]);
-            for ($i = 1; $i <= 5; $i++) {
-                session()->forget(['sesi_started_at_' . $i, 'pelanggaran_sesi_' . $i]);
-            }
-            for ($i = 1; $i <= 20; $i++) {
-                session()->forget([
-                    'jawab_sesi2_q' . $i,
-                    'jawab_sesi3_q' . $i,
-                    'jawab_sesi4_q' . $i,
-                    'jawab_sesi5_q' . $i
-                ]);
-            }
-            for ($i = 1; $i <= 25; $i++) {
-                session()->forget('jawab_sesi6_q' . $i);
-            }
+            $this->examState->clearAttemptSession();
 
             return view('ujian.selesai', [
                 'status_sukses' => true,
-                'nama' => $nama
+                'nama' => $nama,
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return view('ujian.selesai', [
                 'status_sukses' => false,
-                'error_msg' => $e->getMessage()
+                'error_msg' => $e->getMessage(),
             ]);
         }
     }
 
     public function getSoalSesi5($posisi)
     {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5')) {
+        if (!Schema::hasTable('bank_soal_sesi5')) {
             return [
                 'bagian_a' => [],
-                'bagian_b' => []
+                'bagian_b' => [],
             ];
         }
 
@@ -488,7 +234,7 @@ class UjianController extends Controller
 
         $soalSesi5 = [
             'bagian_a' => [],
-            'bagian_b' => []
+            'bagian_b' => [],
         ];
 
         $qCount = 1;
@@ -500,7 +246,6 @@ class UjianController extends Controller
                     $qCount++;
                 }
             } elseif ($row->tipe === 'studi_kasus') {
-                // Ensure sub-questions maintain 1-indexed key numbering
                 $pertanyaanIndexed = [];
                 $subCount = 1;
                 foreach ($pertanyaan as $subQText) {
@@ -511,7 +256,7 @@ class UjianController extends Controller
                 $soalSesi5['bagian_b'][] = [
                     'judul' => $row->judul,
                     'deskripsi' => $row->deskripsi,
-                    'pertanyaan' => $pertanyaanIndexed
+                    'pertanyaan' => $pertanyaanIndexed,
                 ];
             }
         }
@@ -534,5 +279,101 @@ class UjianController extends Controller
         }
 
         return $data;
+    }
+
+    private function getOrBuildSesi1Questions(): array
+    {
+        if (session()->has('soal_sesi2')) {
+            return session('soal_sesi2');
+        }
+
+        $soalRaw = DB::table('bank_soal_sesi2')->inRandomOrder()->limit(20)->get();
+        $soalAcak = [];
+        $nomorGlobal = 1;
+
+        foreach ($soalRaw as $row) {
+            $idSoalAsli = $row->id_soal;
+            $opsiAsli = [
+                'A' => $row->opsi_a,
+                'B' => $row->opsi_b,
+                'C' => $row->opsi_c,
+                'D' => $row->opsi_d,
+                'E' => $row->opsi_e,
+            ];
+
+            $kunciOpsi = array_keys($opsiAsli);
+            shuffle($kunciOpsi);
+
+            $opsiTampil = [];
+            $labelBaru = ['A', 'B', 'C', 'D', 'E'];
+            foreach ($kunciOpsi as $idx => $labelLama) {
+                $opsiTampil[$labelBaru[$idx]] = [
+                    'teks' => $opsiAsli[$labelLama],
+                    'asli' => $labelLama,
+                ];
+            }
+
+            $kunci = DB::table('kunci_jawaban')
+                ->where('nama_sesi', 'sesi2')
+                ->where('no_soal', $idSoalAsli)
+                ->first();
+
+            $soalAcak[] = [
+                'no_tampil' => $nomorGlobal,
+                'id_asli' => $idSoalAsli,
+                'opsi' => $opsiTampil,
+                'kunci_asli' => $kunci ? $kunci->jawaban_benar : '',
+            ];
+
+            $nomorGlobal++;
+        }
+
+        session(['soal_sesi2' => $soalAcak]);
+
+        return $soalAcak;
+    }
+
+    private function getSesi4Images(): array
+    {
+        $images = [];
+        for ($i = 1; $i <= 20; $i++) {
+            $images[$i] = "gambar/visual_reasoning/{$i}.png";
+        }
+        return $images;
+    }
+
+    private function storeSesi1Answers(Request $request): void
+    {
+        $soalAcak = session('soal_sesi2', []);
+        for ($i = 1; $i <= 20; $i++) {
+            session(['jawab_sesi2_q' . $i => '']);
+        }
+
+        foreach ($soalAcak as $soal) {
+            $noTampil = $soal['no_tampil'];
+            $idAsli = $soal['id_asli'];
+            $jawaban = $request->input('jawab_sesi2_q' . $noTampil, '');
+            session(['jawab_sesi2_q' . $idAsli => $jawaban]);
+        }
+    }
+
+    private function storeSequentialAnswers(Request $request, ExamSession $session): void
+    {
+        $prefix = $session->answerSessionPrefix();
+        $count = $session->questionCount();
+        for ($i = 1; $i <= $count; $i++) {
+            session([$prefix . $i => $request->input($prefix . $i, '')]);
+        }
+    }
+
+    private function extractAnswersPayload(int $idPeserta, ExamSession $session): array
+    {
+        $payload = ['id_peserta' => $idPeserta];
+        $prefix = $session->answerSessionPrefix();
+        $count = $session->questionCount();
+        for ($i = 1; $i <= $count; $i++) {
+            $payload['q' . $i] = session($prefix . $i) ?: null;
+        }
+        return $payload;
     }
 }

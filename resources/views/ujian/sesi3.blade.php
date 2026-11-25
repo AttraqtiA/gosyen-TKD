@@ -28,11 +28,11 @@
         <div class="sidebar">
             <div class="logo-box">
                 <img src="https://gosyenpolinator.com/images/gosyen_logo.png" alt="Logo">
-                <div class="badge-custom">{{ __('Sesi 3 Aktif') }}</div>
+                <div class="badge-custom">{{ __('Sesi 3 Aktif') }} (3/{{ $totalSessions ?? 5 }})</div>
             </div>
             <div class="timer-box" id="timerBox">
                 <p>{{ __('Sisa Waktu') }}</p>
-                <h2 id="countdown">10:00</h2>
+                <h2 id="countdown">{{ sprintf('%02d:%02d', intdiv($durasi, 60), $durasi % 60) }}</h2>
             </div>
             <div class="progress-wrapper">
                 <div class="progress-header">
@@ -47,7 +47,7 @@
                 <h3>{{ __('Informasi Tes') }}</h3>
                 <ul>
                     <li>{{ __('Total soal: 20') }}</li>
-                    <li>{{ __('Durasi: 10 menit') }}</li>
+                    <li>{{ __('Durasi:') }} {{ $durasiMenit ?? 10 }} {{ __('menit') }}</li>
                     <li>{{ __('Ketik jawaban berupa angka') }}</li>
                     <li>{{ __('Jawaban tersimpan otomatis') }}</li>
                 </ul>
@@ -56,7 +56,14 @@
 
         <!-- CONTENT / FORM -->
         <div class="content">
-            <form id="formUjian" action="{{ route('ujian.submit', ['sesi' => 3]) }}" method="POST">
+            <form id="formUjian"
+                  action="{{ route('ujian.submit', ['sesi' => 3]) }}"
+                  method="POST"
+                  data-duration="{{ $durasi }}"
+                  data-critical-threshold="{{ $criticalThreshold ?? 60 }}"
+                  data-progress-mode="numeric"
+                  data-question-prefix="jawab_sesi4_q"
+                  data-total-questions="20">
                 @csrf
                 <input type="hidden" name="pelanggaran_sesi" id="pelanggaran_sesi" value="0">
 
@@ -91,49 +98,5 @@
 @endsection
 
 @section('scripts')
-<script>
-    // Progress bar
-    const totalSoal = 20;
-    document.querySelectorAll('.input-jawaban').forEach(input => {
-        input.addEventListener('input', updateProgress);
-    });
-    function updateProgress() {
-        let answered = 0;
-        for (let i = 1; i <= totalSoal; i++) {
-            const val = document.querySelector('input[name="jawab_sesi4_q'+i+'"]').value.trim();
-            if (val !== '') {
-                answered++;
-            }
-        }
-        const pct = (answered / totalSoal) * 100;
-        document.getElementById('progressFill').style.width = pct + '%';
-        document.getElementById('progressText').innerText = answered + '/' + totalSoal;
-    }
-
-    // Timer countdown
-    let totalWaktu = {{ $durasi }};
-    let timerInterval;
-    function mulaiTimer() {
-        timerInterval = setInterval(function() {
-            let m = Math.floor(totalWaktu / 60);
-            let d = totalWaktu % 60;
-            m = m < 10 ? '0'+m : m;
-            d = d < 10 ? '0'+d : d;
-            document.getElementById('countdown').innerText = m + ':' + d;
-            
-            if (totalWaktu <= 60) {
-                document.getElementById('timerBox').classList.add('critical');
-            }
-            if (totalWaktu < 0) {
-                clearInterval(timerInterval);
-                const overlay = document.getElementById('app-loading-overlay');
-                if (overlay) overlay.classList.add('show');
-                document.getElementById('formUjian').submit();
-            }
-            totalWaktu--;
-        }, 1000);
-    }
-    
-    mulaiTimer();
-</script>
+{{-- Timer & Progress driven centrally by window.ExamRuntime in layouts.ujian --}}
 @endsection

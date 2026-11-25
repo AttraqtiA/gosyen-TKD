@@ -3,20 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-    <script>
-        (function () {
-            try {
-                var saved = localStorage.getItem('color-scheme');
-                var meta = document.querySelector('meta[name="color-scheme"]');
-                if (meta && (saved === 'light' || saved === 'dark')) {
-                    meta.content = saved;
-                    document.documentElement.setAttribute('data-theme', saved);
-                    document.documentElement.setAttribute('data-bs-theme', saved);
-                }
-            } catch (e) {}
-        })();
-    </script>
+    @include('partials.theme-head')
     <title>Login Dashboard — Gosyen Assessment</title>
     <link rel="icon" href="https://gosyenpolinator.com/images/gosyen_logo.png">
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
@@ -47,7 +34,6 @@
                 --brand-primary-hover: #2563eb;
             }
         }
-        :root:has(> head > meta[name="color-scheme"][content="dark"]),
         :root[data-theme="dark"] {
             color-scheme: dark;
             --bg-canvas: #0b1120;
@@ -58,6 +44,9 @@
             --text-muted: #94a3b8;
             --brand-primary: #3b82f6;
             --brand-primary-hover: #2563eb;
+        }
+        :root[data-theme="light"] {
+            color-scheme: light;
         }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;

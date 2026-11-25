@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AccessRole;
 use Illuminate\Http\Request;
 use App\Models\AksesPin;
 
@@ -9,7 +10,7 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        if (session()->has('role_akses')) {
+        if (AccessRole::current() !== null) {
             return redirect()->route('dashboard.index');
         }
         return view('dashboard.login');
@@ -23,8 +24,8 @@ class AuthController extends Controller
 
         $akses = AksesPin::where('pin', $request->pin)->first();
 
-        if ($akses) {
-            session(['role_akses' => $akses->role]);
+        if ($akses && AccessRole::tryFrom($akses->role) !== null) {
+            session([AccessRole::SESSION_KEY => $akses->role]);
             return redirect()->route('dashboard.index');
         }
 
@@ -33,7 +34,7 @@ class AuthController extends Controller
 
     public function logout()
     {
-        session()->forget('role_akses');
+        session()->forget(AccessRole::SESSION_KEY);
         return redirect()->route('login');
     }
 }

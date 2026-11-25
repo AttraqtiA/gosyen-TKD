@@ -116,6 +116,21 @@ class AnalisisUjianHelper
         // Final recommendation category
         $kategori_akhir = self::getKategoriAkhir($skor_akhir, $config['rekomendasi_ist'], $studiKasusEval['kategori']);
 
+        $recommendation_badge_class = match (true) {
+            str_contains($kategori_akhir, 'DIREKOMENDASIKAN DENGAN CATATAN') => 'bg-rec-yellow',
+            str_contains($kategori_akhir, 'DIREKOMENDASIKAN') => 'bg-rec-green',
+            str_contains($kategori_akhir, 'DIPERTIMBANGKAN') || str_contains($kategori_akhir, 'KURANG') => 'bg-rec-orange',
+            default => 'bg-rec-red',
+        };
+
+        $ist_badge_class = match (true) {
+            str_contains($kategori_ist_text, 'Diskualifikasi') => 'bg-danger text-white',
+            str_contains($kategori_ist_text, 'Tinggi') => 'bg-success text-white',
+            str_contains($kategori_ist_text, 'Cukup') || str_contains($kategori_ist_text, 'Sedang') => 'bg-info text-dark',
+            str_contains($kategori_ist_text, 'Rendah') => 'bg-warning text-dark',
+            default => 'bg-secondary text-white',
+        };
+
         $evalDetails = self::buildCaseStudyEvaluation(
             $posisiUpper,
             $studiKasusEval['has_case'] ? ($studiKasusEval['total_skor'] / 100) : 0.65,
@@ -151,6 +166,8 @@ class AnalisisUjianHelper
             'skor_kasus_weighted' => round($skor_kasus_weighted, 2),
             'skor_akhir' => round($skor_akhir, 2),
             'kategori_akhir' => $kategori_akhir,
+            'recommendation_badge_class' => $recommendation_badge_class,
+            'ist_badge_class' => $ist_badge_class,
             'penjelasan_integrasi' => $evalDetails['penjelasan_integrasi'],
             'kesimpulan_umum' => $evalDetails['kesimpulan_umum'],
             'kelebihan_list' => $evalDetails['kelebihan_list'],

@@ -14,7 +14,7 @@ use App\Http\Controllers\DashboardController;
 // Localization Route
 Route::get('/lang/{locale}', [\App\Http\Controllers\LanguageController::class, 'switchLanguage'])->name('lang.switch');
 
-// Candidate Exam Routes
+// Candidate Exam Routes (guarded by App\Services\ExamStateMachine)
 Route::get('/', [UjianController::class, 'index'])->name('ujian.index');
 Route::post('/ujian/start', [UjianController::class, 'start'])->name('ujian.start');
 Route::get('/ujian/petunjuk/{sesi}', [UjianController::class, 'petunjuk'])->name('ujian.petunjuk');
@@ -28,56 +28,60 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:3,1');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Dashboard Management Routes
+// Dashboard Entry (redirects to /login if unauthenticated)
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-Route::post('/dashboard/pin', [DashboardController::class, 'updatePin'])->name('dashboard.pin');
-Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('dashboard.export');
-Route::get('/dashboard/pdf/{id}', [DashboardController::class, 'generatePdf'])->name('dashboard.pdf');
-Route::get('/dashboard/word/{id}', [DashboardController::class, 'generateWord'])->name('dashboard.word');
 
-// Admin Management Routes (CRUD Sesi 1-5, Posisi & Perusahaan)
-Route::get('/dashboard/perusahaan', [DashboardController::class, 'listPerusahaan'])->name('dashboard.perusahaan');
-Route::post('/dashboard/perusahaan', [DashboardController::class, 'storePerusahaan'])->name('dashboard.perusahaan.store');
-Route::post('/dashboard/perusahaan/{id}/update', [DashboardController::class, 'updatePerusahaan'])->name('dashboard.perusahaan.update');
-Route::post('/dashboard/perusahaan/{id}/delete', [DashboardController::class, 'deletePerusahaan'])->name('dashboard.perusahaan.delete');
+// Psychologist-only Report Routes
+Route::middleware('role:psikolog')->group(function () {
+    Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('dashboard.export');
+    Route::get('/dashboard/pdf/{id}', [DashboardController::class, 'generatePdf'])->name('dashboard.pdf');
+    Route::get('/dashboard/word/{id}', [DashboardController::class, 'generateWord'])->name('dashboard.word');
+});
 
-Route::get('/dashboard/posisi', [DashboardController::class, 'listPosisi'])->name('dashboard.posisi');
-Route::post('/dashboard/posisi', [DashboardController::class, 'storePosisi'])->name('dashboard.posisi.store');
-Route::post('/dashboard/posisi/{id}/update', [DashboardController::class, 'updatePosisi'])->name('dashboard.posisi.update');
-Route::post('/dashboard/posisi/{id}/delete', [DashboardController::class, 'deletePosisi'])->name('dashboard.posisi.delete');
+// Shared Authenticated Dashboard Routes (Admin & Psychologist)
+Route::middleware('role:admin,psikolog')->group(function () {
+    Route::get('/dashboard/rubrik', [DashboardController::class, 'listRubrik'])->name('dashboard.rubrik');
+    Route::get('/dashboard/peserta/{id}/edit', [DashboardController::class, 'editPeserta'])->name('dashboard.peserta.edit');
+    Route::post('/dashboard/peserta/{id}/update', [DashboardController::class, 'updatePeserta'])->name('dashboard.peserta.update');
+});
 
-Route::get('/dashboard/sesi1', [DashboardController::class, 'listSesi1'])->name('dashboard.sesi1');
-Route::post('/dashboard/sesi1', [DashboardController::class, 'storeSesi1'])->name('dashboard.sesi1.store');
-Route::post('/dashboard/sesi1/{id}/update', [DashboardController::class, 'updateSesi1'])->name('dashboard.sesi1.update');
-Route::post('/dashboard/sesi1/{id}/delete', [DashboardController::class, 'deleteSesi1'])->name('dashboard.sesi1.delete');
+// Admin-only Management Routes (CRUD Perusahaan, Posisi, Sesi 1-5, Rubrik, Durasi, PIN)
+Route::middleware('role:admin')->group(function () {
+    Route::post('/dashboard/pin', [DashboardController::class, 'updatePin'])->name('dashboard.pin');
 
-Route::get('/dashboard/sesi2', [DashboardController::class, 'listSesi2'])->name('dashboard.sesi2');
-Route::post('/dashboard/sesi2', [DashboardController::class, 'storeSesi2'])->name('dashboard.sesi2.store');
-Route::post('/dashboard/sesi2/{id}/update', [DashboardController::class, 'updateSesi2'])->name('dashboard.sesi2.update');
-Route::post('/dashboard/sesi2/{id}/delete', [DashboardController::class, 'deleteSesi2'])->name('dashboard.sesi2.delete');
+    Route::get('/dashboard/perusahaan', [DashboardController::class, 'listPerusahaan'])->name('dashboard.perusahaan');
+    Route::post('/dashboard/perusahaan', [DashboardController::class, 'storePerusahaan'])->name('dashboard.perusahaan.store');
+    Route::post('/dashboard/perusahaan/{id}/update', [DashboardController::class, 'updatePerusahaan'])->name('dashboard.perusahaan.update');
+    Route::post('/dashboard/perusahaan/{id}/delete', [DashboardController::class, 'deletePerusahaan'])->name('dashboard.perusahaan.delete');
 
-Route::get('/dashboard/sesi3', [DashboardController::class, 'listSesi3'])->name('dashboard.sesi3');
-Route::post('/dashboard/sesi3', [DashboardController::class, 'storeSesi3'])->name('dashboard.sesi3.store');
-Route::post('/dashboard/sesi3/{id}/update', [DashboardController::class, 'updateSesi3'])->name('dashboard.sesi3.update');
-Route::post('/dashboard/sesi3/{id}/delete', [DashboardController::class, 'deleteSesi3'])->name('dashboard.sesi3.delete');
+    Route::get('/dashboard/posisi', [DashboardController::class, 'listPosisi'])->name('dashboard.posisi');
+    Route::post('/dashboard/posisi', [DashboardController::class, 'storePosisi'])->name('dashboard.posisi.store');
+    Route::post('/dashboard/posisi/{id}/update', [DashboardController::class, 'updatePosisi'])->name('dashboard.posisi.update');
+    Route::post('/dashboard/posisi/{id}/delete', [DashboardController::class, 'deletePosisi'])->name('dashboard.posisi.delete');
 
-Route::get('/dashboard/sesi4', [DashboardController::class, 'listSesi4'])->name('dashboard.sesi4');
-Route::post('/dashboard/sesi4/update', [DashboardController::class, 'updateSesi4'])->name('dashboard.sesi4.update');
+    Route::get('/dashboard/sesi1', [DashboardController::class, 'listSesi1'])->name('dashboard.sesi1');
+    Route::post('/dashboard/sesi1', [DashboardController::class, 'storeSesi1'])->name('dashboard.sesi1.store');
+    Route::post('/dashboard/sesi1/{id}/update', [DashboardController::class, 'updateSesi1'])->name('dashboard.sesi1.update');
+    Route::post('/dashboard/sesi1/{id}/delete', [DashboardController::class, 'deleteSesi1'])->name('dashboard.sesi1.delete');
 
-Route::get('/dashboard/sesi5', [DashboardController::class, 'listSesi5'])->name('dashboard.sesi5');
-Route::post('/dashboard/sesi5', [DashboardController::class, 'storeSesi5'])->name('dashboard.sesi5.store');
-Route::post('/dashboard/sesi5/{id}/update', [DashboardController::class, 'updateSesi5'])->name('dashboard.sesi5.update');
-Route::post('/dashboard/sesi5/{id}/delete', [DashboardController::class, 'deleteSesi5'])->name('dashboard.sesi5.delete');
+    Route::get('/dashboard/sesi2', [DashboardController::class, 'listSesi2'])->name('dashboard.sesi2');
+    Route::post('/dashboard/sesi2', [DashboardController::class, 'storeSesi2'])->name('dashboard.sesi2.store');
+    Route::post('/dashboard/sesi2/{id}/update', [DashboardController::class, 'updateSesi2'])->name('dashboard.sesi2.update');
+    Route::post('/dashboard/sesi2/{id}/delete', [DashboardController::class, 'deleteSesi2'])->name('dashboard.sesi2.delete');
 
-// Assessment Rubric Routes
-Route::get('/dashboard/rubrik', [DashboardController::class, 'listRubrik'])->name('dashboard.rubrik');
-Route::post('/dashboard/rubrik/{id}/update', [DashboardController::class, 'updateRubrik'])->name('dashboard.rubrik.update');
+    Route::get('/dashboard/sesi3', [DashboardController::class, 'listSesi3'])->name('dashboard.sesi3');
+    Route::post('/dashboard/sesi3', [DashboardController::class, 'storeSesi3'])->name('dashboard.sesi3.store');
+    Route::post('/dashboard/sesi3/{id}/update', [DashboardController::class, 'updateSesi3'])->name('dashboard.sesi3.update');
+    Route::post('/dashboard/sesi3/{id}/delete', [DashboardController::class, 'deleteSesi3'])->name('dashboard.sesi3.delete');
 
-// Candidate Result Edit Routes
-Route::get('/dashboard/peserta/{id}/edit', [DashboardController::class, 'editPeserta'])->name('dashboard.peserta.edit');
-Route::post('/dashboard/peserta/{id}/update', [DashboardController::class, 'updatePeserta'])->name('dashboard.peserta.update');
+    Route::get('/dashboard/sesi4', [DashboardController::class, 'listSesi4'])->name('dashboard.sesi4');
+    Route::post('/dashboard/sesi4/update', [DashboardController::class, 'updateSesi4'])->name('dashboard.sesi4.update');
 
-// Time Settings Routes
-Route::post('/dashboard/durasi/{sesi}/update', [DashboardController::class, 'updateDurasiSesi'])->name('dashboard.update_durasi');
+    Route::get('/dashboard/sesi5', [DashboardController::class, 'listSesi5'])->name('dashboard.sesi5');
+    Route::post('/dashboard/sesi5', [DashboardController::class, 'storeSesi5'])->name('dashboard.sesi5.store');
+    Route::post('/dashboard/sesi5/{id}/update', [DashboardController::class, 'updateSesi5'])->name('dashboard.sesi5.update');
+    Route::post('/dashboard/sesi5/{id}/delete', [DashboardController::class, 'deleteSesi5'])->name('dashboard.sesi5.delete');
 
-Route::get('/ujian/diskualifikasi', [App\Http\Controllers\UjianController::class, 'diskualifikasi'])->name('ujian.diskualifikasi');
+    Route::post('/dashboard/rubrik/{id}/update', [DashboardController::class, 'updateRubrik'])->name('dashboard.rubrik.update');
+    Route::post('/dashboard/durasi/{sesi}/update', [DashboardController::class, 'updateDurasiSesi'])->name('dashboard.update_durasi');
+});

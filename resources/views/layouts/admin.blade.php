@@ -3,23 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-    <script>
-        (function () {
-            try {
-                var saved = localStorage.getItem('color-scheme');
-                var meta = document.querySelector('meta[name="color-scheme"]');
-                if (meta && (saved === 'light' || saved === 'dark')) {
-                    meta.content = saved;
-                    document.documentElement.setAttribute('data-theme', saved);
-                    document.documentElement.setAttribute('data-bs-theme', saved);
-                } else {
-                    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
-                }
-            } catch (e) {}
-        })();
-    </script>
+    @include('partials.theme-head')
     <title>@yield('title', 'Admin Dashboard') — Gosyen Assessment</title>
 
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
@@ -96,7 +80,6 @@
             }
         }
 
-        :root:has(> head > meta[name="color-scheme"][content="dark"]),
         :root[data-theme="dark"] {
             color-scheme: dark;
             --bg-canvas: #0b1120;
@@ -129,7 +112,6 @@
             --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.5);
         }
 
-        :root:has(> head > meta[name="color-scheme"][content="light"]),
         :root[data-theme="light"] {
             color-scheme: light;
         }
@@ -311,9 +293,7 @@
         }
         .theme-toggle-btn .icon-sun { display: none; }
         .theme-toggle-btn .icon-moon { display: block; }
-        :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-btn .icon-sun,
         :root[data-theme="dark"] .theme-toggle-btn .icon-sun { display: block; }
-        :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-btn .icon-moon,
         :root[data-theme="dark"] .theme-toggle-btn .icon-moon { display: none; }
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) .theme-toggle-btn .icon-sun { display: block; }
@@ -629,101 +609,7 @@
     </main>
 
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-    <script>
-        (function () {
-            var btn = document.getElementById('themeToggleBtn');
-            var meta = document.querySelector('meta[name="color-scheme"]');
-            var mql = window.matchMedia('(prefers-color-scheme: dark)');
-
-            function applyScheme(scheme) {
-                if (scheme === 'light' || scheme === 'dark') {
-                    if (meta) meta.content = scheme;
-                    document.documentElement.setAttribute('data-theme', scheme);
-                    document.documentElement.setAttribute('data-bs-theme', scheme);
-                } else {
-                    if (meta) meta.content = 'light dark';
-                    document.documentElement.removeAttribute('data-theme');
-                    document.documentElement.setAttribute('data-bs-theme', mql.matches ? 'dark' : 'light');
-                }
-            }
-
-            if (btn) {
-                btn.addEventListener('click', function () {
-                    var stored = null;
-                    try { stored = localStorage.getItem('color-scheme'); } catch (e) {}
-                    var current = stored || (mql.matches ? 'dark' : 'light');
-                    var target = current === 'dark' ? 'light' : 'dark';
-                    var sysTheme = mql.matches ? 'dark' : 'light';
-
-                    try {
-                        if (target === sysTheme) {
-                            localStorage.removeItem('color-scheme');
-                            applyScheme(null);
-                        } else {
-                            localStorage.setItem('color-scheme', target);
-                            applyScheme(target);
-                        }
-                    } catch (e) {
-                        applyScheme(target);
-                    }
-                });
-            }
-
-            window.addEventListener('storage', function (e) {
-                if (e.key === 'color-scheme') {
-                    applyScheme(e.newValue);
-                }
-            });
-
-            mql.addEventListener('change', function () {
-                var stored = null;
-                try { stored = localStorage.getItem('color-scheme'); } catch (e) {}
-                if (!stored) applyScheme(null);
-            });
-
-            // Subtle Top Progress Bar & Loading Overlay
-            var progressBar = document.getElementById('top-progress-bar');
-            var loadingOverlay = document.getElementById('app-loading-overlay');
-
-            function startProgress() {
-                if (!progressBar) return;
-                progressBar.classList.add('active');
-                progressBar.style.width = '70%';
-            }
-
-            function resetProgress() {
-                if (progressBar) {
-                    progressBar.style.width = '100%';
-                    setTimeout(function () {
-                        progressBar.classList.remove('active');
-                        progressBar.style.width = '0%';
-                    }, 200);
-                }
-                if (loadingOverlay) loadingOverlay.classList.remove('show');
-            }
-
-            document.addEventListener('click', function (e) {
-                var link = e.target.closest('a[href]');
-                if (!link) return;
-                var href = link.getAttribute('href');
-                if (!href || href.startsWith('#') || link.target === '_blank' || link.hasAttribute('download')) return;
-                if (href.includes('export') || href.includes('/pdf/') || href.includes('/word/')) return;
-                startProgress();
-            });
-
-            document.addEventListener('submit', function (e) {
-                var form = e.target;
-                if (form && form.method && form.method.toLowerCase() === 'post') {
-                    startProgress();
-                    if (loadingOverlay) loadingOverlay.classList.add('show');
-                } else {
-                    startProgress();
-                }
-            });
-
-            window.addEventListener('pageshow', resetProgress);
-        })();
-    </script>
+    @include('partials.ui-machines-script', ['toggleId' => 'themeToggleBtn', 'ignoreDownloads' => true])
     @yield('scripts')
 </body>
 </html>

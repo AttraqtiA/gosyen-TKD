@@ -317,146 +317,139 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Perusahaan handling
-        const perusahaanInput = document.getElementById('perusahaan');
-        const perusahaanList = document.querySelectorAll('.perusahaan-item');
-        const perusahaanText = document.getElementById('perusahaanSelectedText');
-        const pContainer = document.getElementById('perusahaan_lainnya_container');
-        const pInput = document.getElementById('perusahaan_lainnya');
+        // Explicit Registration Form State Machine
+        // Single source of truth for Company -> Position filtering, Search, and "Lainnya" inputs
+        const dom = {
+            perusahaanInput: document.getElementById('perusahaan'),
+            perusahaanItems: Array.from(document.querySelectorAll('.perusahaan-item')),
+            perusahaanText: document.getElementById('perusahaanSelectedText'),
+            perusahaanOtherBox: document.getElementById('perusahaan_lainnya_container'),
+            perusahaanOtherInput: document.getElementById('perusahaan_lainnya'),
+            posisiInput: document.getElementById('posisi'),
+            posisiItems: Array.from(document.querySelectorAll('.posisi-item')),
+            posisiText: document.getElementById('posisiSelectedText'),
+            posisiOtherBox: document.getElementById('posisi_lainnya_container'),
+            posisiOtherInput: document.getElementById('posisi_lainnya'),
+            searchInput: document.getElementById('searchPosisi'),
+        };
 
-        function togglePerusahaanLainnya() {
-            if (perusahaanInput.value === 'Lainnya') {
-                pContainer.classList.remove('hidden');
-                pInput.setAttribute('required', 'required');
-            } else {
-                pContainer.classList.add('hidden');
-                pInput.removeAttribute('required');
-            }
+        const PLACEHOLDERS = {
+            perusahaan: "{{ __('-- Pilih Perusahaan --') }}",
+            posisi: "{{ __('-- Pilih Posisi Pekerjaan --') }}",
+        };
+
+        const state = {
+            perusahaan: dom.perusahaanInput.value || '',
+            perusahaanId: '',
+            posisi: dom.posisiInput.value || '',
+            searchTerm: '',
+        };
+
+        function findPerusahaanItem(value) {
+            return dom.perusahaanItems.find(item => item.getAttribute('data-value') === value) || null;
         }
 
-        let selectedPerusahaanId = '';
+        function findPosisiItem(value) {
+            return dom.posisiItems.find(item => item.getAttribute('data-value') === value) || null;
+        }
 
-        function filterPosisiByPerusahaan() {
-            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            let currentValid = false;
-            positionsList.forEach(item => {
-                const text = item.innerText.toLowerCase();
-                const val = item.getAttribute('data-value');
-                const itemPerusahaanId = item.getAttribute('data-perusahaan-id') || '';
-                const matchesCompany = !selectedPerusahaanId || !itemPerusahaanId || itemPerusahaanId === selectedPerusahaanId;
-                const matchesSearch = text.includes(term);
+        function render(focusTarget) {
+            // 1. Sync Perusahaan display & "Lainnya" input
+            dom.perusahaanInput.value = state.perusahaan;
+            if (state.perusahaan) {
+                const matchedCompany = findPerusahaanItem(state.perusahaan);
+                dom.perusahaanText.innerText = matchedCompany ? matchedCompany.innerText : state.perusahaan;
+            } else {
+                dom.perusahaanText.innerText = PLACEHOLDERS.perusahaan;
+            }
 
-                if (matchesCompany && val === posisiInput.value) {
-                    currentValid = true;
+            if (state.perusahaan === 'Lainnya') {
+                dom.perusahaanOtherBox.classList.remove('hidden');
+                dom.perusahaanOtherInput.setAttribute('required', 'required');
+                if (focusTarget === 'perusahaan') setTimeout(() => dom.perusahaanOtherInput.focus(), 100);
+            } else {
+                dom.perusahaanOtherBox.classList.add('hidden');
+                dom.perusahaanOtherInput.removeAttribute('required');
+                if (focusTarget === 'perusahaan') dom.perusahaanOtherInput.value = '';
+            }
+
+            // 2. Filter Posisi list by BOTH selected company AND search term
+            const term = state.searchTerm.toLowerCase().trim();
+            let currentPosisiStillAllowed = false;
+
+            dom.posisiItems.forEach(item => {
+                const val = item.getAttribute('data-value') || '';
+                const itemCompanyId = item.getAttribute('data-perusahaan-id') || '';
+                const matchesCompany = !state.perusahaanId || !itemCompanyId || itemCompanyId === state.perusahaanId;
+                const matchesSearch = !term || item.textContent.toLowerCase().includes(term);
+
+                if (matchesCompany && val === state.posisi) {
+                    currentPosisiStillAllowed = true;
                 }
 
-                if (matchesCompany && matchesSearch) {
-                    item.parentElement.style.display = 'block';
-                } else {
-                    item.parentElement.style.display = 'none';
+                const li = item.closest('li');
+                if (li) {
+                    li.style.display = (matchesCompany && matchesSearch) ? '' : 'none';
                 }
             });
 
-            if (posisiInput.value && !currentValid) {
-                posisiInput.value = '';
-                positionsText.innerText = "{{ __('-- Pilih Posisi Pekerjaan --') }}";
-                togglePosisiLainnya();
+            // Reset stale position if company switched to one where the previously picked position is disallowed
+            if (state.posisi && !currentPosisiStillAllowed) {
+                state.posisi = '';
+            }
+
+            // 3. Sync Posisi display & "Lainnya" input
+            dom.posisiInput.value = state.posisi;
+            if (state.posisi) {
+                const matchedPosisi = findPosisiItem(state.posisi);
+                dom.posisiText.innerText = matchedPosisi ? matchedPosisi.innerText : state.posisi;
+            } else {
+                dom.posisiText.innerText = PLACEHOLDERS.posisi;
+            }
+
+            if (state.posisi === 'Lainnya') {
+                dom.posisiOtherBox.classList.remove('hidden');
+                dom.posisiOtherInput.setAttribute('required', 'required');
+                if (focusTarget === 'posisi') setTimeout(() => dom.posisiOtherInput.focus(), 100);
+            } else {
+                dom.posisiOtherBox.classList.add('hidden');
+                dom.posisiOtherInput.removeAttribute('required');
+                if (focusTarget === 'posisi') dom.posisiOtherInput.value = '';
             }
         }
 
-        perusahaanList.forEach(item => {
-            item.addEventListener('click', function() {
-                const val = this.getAttribute('data-value');
-                const text = this.innerText;
-                selectedPerusahaanId = this.getAttribute('data-perusahaan-id') || '';
-                
-                perusahaanInput.value = val;
-                perusahaanText.innerText = text;
-                
-                togglePerusahaanLainnya();
-                filterPosisiByPerusahaan();
-                
-                if (val === 'Lainnya') {
-                    setTimeout(() => pInput.focus(), 100);
-                } else {
-                    pInput.value = '';
-                }
+        // Hydrate initial company ID if old('perusahaan') is present
+        if (state.perusahaan) {
+            const matched = findPerusahaanItem(state.perusahaan);
+            if (matched) state.perusahaanId = matched.getAttribute('data-perusahaan-id') || '';
+        }
+
+        dom.perusahaanItems.forEach(item => {
+            item.addEventListener('click', function () {
+                state.perusahaan = this.getAttribute('data-value') || '';
+                state.perusahaanId = this.getAttribute('data-perusahaan-id') || '';
+                render('perusahaan');
             });
         });
 
-        if (perusahaanInput.value) {
-            const matchedP = Array.from(perusahaanList).find(item => item.getAttribute('data-value') === perusahaanInput.value);
-            if (matchedP) {
-                perusahaanText.innerText = matchedP.innerText;
-                selectedPerusahaanId = matchedP.getAttribute('data-perusahaan-id') || '';
-            } else {
-                perusahaanText.innerText = perusahaanInput.value;
-            }
-            togglePerusahaanLainnya();
-        }
-
-        // Posisi handling
-        const posisiInput = document.getElementById('posisi');
-        const positionsList = document.querySelectorAll('.posisi-item');
-        const positionsText = document.getElementById('posisiSelectedText');
-        const container = document.getElementById('posisi_lainnya_container');
-        const input = document.getElementById('posisi_lainnya');
-        const searchInput = document.getElementById('searchPosisi');
-
-        function togglePosisiLainnya() {
-            if (posisiInput.value === 'Lainnya') {
-                container.classList.remove('hidden');
-                input.setAttribute('required', 'required');
-            } else {
-                container.classList.add('hidden');
-                input.removeAttribute('required');
-            }
-        }
-
-        positionsList.forEach(item => {
-            item.addEventListener('click', function() {
-                const val = this.getAttribute('data-value');
-                const text = this.innerText;
-                
-                posisiInput.value = val;
-                positionsText.innerText = text;
-                
-                togglePosisiLainnya();
-                
-                if (val === 'Lainnya') {
-                    setTimeout(() => input.focus(), 100);
-                } else {
-                    input.value = '';
-                }
+        dom.posisiItems.forEach(item => {
+            item.addEventListener('click', function () {
+                state.posisi = this.getAttribute('data-value') || '';
+                render('posisi');
             });
         });
 
-        searchInput.addEventListener('input', function() {
-            const filter = this.value.toLowerCase();
-            positionsList.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                const parentLi = item.closest('li');
-                if (text.includes(filter)) {
-                    parentLi.style.display = "";
-                } else {
-                    parentLi.style.display = "none";
-                }
+        if (dom.searchInput) {
+            dom.searchInput.addEventListener('input', function () {
+                state.searchTerm = this.value;
+                render();
             });
-        });
-
-        searchInput.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-
-        if (posisiInput.value) {
-            const matchedItem = Array.from(positionsList).find(item => item.getAttribute('data-value') === posisiInput.value);
-            if (matchedItem) {
-                positionsText.innerText = matchedItem.innerText;
-            } else {
-                positionsText.innerText = posisiInput.value;
-            }
-            togglePosisiLainnya();
+            dom.searchInput.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
         }
+
+        render();
     });
 </script>
 @endsection

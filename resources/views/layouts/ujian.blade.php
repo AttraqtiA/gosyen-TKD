@@ -3,23 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="color-scheme" content="light dark">
-    <script>
-        (function () {
-            try {
-                var saved = localStorage.getItem('color-scheme');
-                var meta = document.querySelector('meta[name="color-scheme"]');
-                if (meta && (saved === 'light' || saved === 'dark')) {
-                    meta.content = saved;
-                    document.documentElement.setAttribute('data-theme', saved);
-                    document.documentElement.setAttribute('data-bs-theme', saved);
-                } else {
-                    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
-                }
-            } catch (e) {}
-        })();
-    </script>
+    @include('partials.theme-head')
     <meta name="theme-color" content="#1d4ed8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -75,7 +59,6 @@
             }
         }
 
-        :root:has(> head > meta[name="color-scheme"][content="dark"]),
         :root[data-theme="dark"] {
             color-scheme: dark;
             --primary: #3b82f6; --primary-dark: #2563eb; --secondary: #0ea5e9;
@@ -91,6 +74,9 @@
             --text-muted: #94a3b8;
             --hero-text: #f8fafc;
             --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+        :root[data-theme="light"] {
+            color-scheme: light;
         }
 
         body {
@@ -124,7 +110,6 @@
             border-radius: 999px; font-size: 12.5px; font-weight: 700;
             border: 1px solid rgba(37,99,235,0.28);
         }
-        :root:has(> head > meta[name="color-scheme"][content="dark"]) .badge-custom,
         :root[data-theme="dark"] .badge-custom {
             background: rgba(59,130,246,0.2);
             color: #93c5fd;
@@ -432,9 +417,7 @@
         @keyframes spinLoader { to { transform: rotate(360deg); } }
         .theme-toggle-pill .icon-sun { display: none; }
         .theme-toggle-pill .icon-moon { display: block; }
-        :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-pill .icon-sun,
         :root[data-theme="dark"] .theme-toggle-pill .icon-sun { display: block; }
-        :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle-pill .icon-moon,
         :root[data-theme="dark"] .theme-toggle-pill .icon-moon { display: none; }
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) .theme-toggle-pill .icon-sun { display: block; }
@@ -560,7 +543,7 @@
             lastTouchEnd = now;
         }, { passive: false });
 
-        // Global Anti-cheat Freeze & Alarm Sound
+        // Explicit Exam Runtime State Machines: AntiCheatMachine + TimerMachine + ProgressMachine
         document.addEventListener('DOMContentLoaded', function() {
             const formUjian = document.getElementById('formUjian');
             if (!formUjian) return;
@@ -587,14 +570,10 @@
 
             const overlay = document.getElementById('freeze-overlay');
             const counter = document.getElementById('freeze-countdown');
-            let isFrozen = false;
-            let isSubmitting = false;
-            let freezeTimer;
-            let freezeLeft = 30;
-
-            formUjian.addEventListener('submit', function() {
-                isSubmitting = true;
-            });
+            const warningText = document.getElementById('freeze-warning-text');
+            const pelanggaranInput = document.getElementById('pelanggaran_sesi');
+            const isEn = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
+            const MAX_VIOLATIONS = {{ \App\Services\ExamStateMachine::MAX_VIOLATIONS }};
 
             let globalAudioCtx = null;
             function initAudio() {
@@ -602,8 +581,6 @@
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
                     if (AudioContext) {
                         globalAudioCtx = new AudioContext();
-                        
-                        // iOS Safari requires playing a sound during user interaction to unlock AudioContext
                         const osc = globalAudioCtx.createOscillator();
                         const gain = globalAudioCtx.createGain();
                         gain.gain.value = 0;
@@ -622,289 +599,306 @@
 
             function playAlarmSound() {
                 try {
-                    if (!globalAudioCtx) {
-                        initAudio();
-                    }
+                    if (!globalAudioCtx) initAudio();
                     const ctx = globalAudioCtx;
                     if (!ctx) return;
-                    if (ctx.state === 'suspended') {
-                        ctx.resume();
-                    }
-                    
+                    if (ctx.state === 'suspended') ctx.resume();
+
                     const osc1 = ctx.createOscillator();
                     const osc2 = ctx.createOscillator();
                     const gainNode = ctx.createGain();
                     const modulationGain = ctx.createGain();
-                    
+
                     osc1.type = 'sawtooth';
                     osc1.frequency.setValueAtTime(600, ctx.currentTime);
-                    
                     osc2.type = 'sine';
                     osc2.frequency.setValueAtTime(4, ctx.currentTime);
-                    
                     modulationGain.gain.setValueAtTime(200, ctx.currentTime);
-                    
+
                     osc2.connect(modulationGain);
                     modulationGain.connect(osc1.frequency);
-                    
                     osc1.connect(gainNode);
                     gainNode.connect(ctx.destination);
-                    
+
                     gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 4);
-                    
+
                     osc1.start();
                     osc2.start();
-                    
                     osc1.stop(ctx.currentTime + 4);
                     osc2.stop(ctx.currentTime + 4);
-                } catch(e) {
-                    console.error("Audio Context Error: ", e);
+                } catch (e) {
+                    console.error('Audio Context Error:', e);
                 }
             }
 
-            let flashInterval;
+            let flashInterval = null;
             function applyPenaltyEffects() {
-                if (!document.hidden) {
-                    // Bunyikan alarm dan getar
-                    playAlarmSound();
-                    
-                    if (navigator.vibrate) {
-                        // Getar untuk Android (iOS Safari tidak support API ini)
-                        navigator.vibrate([1000, 500, 1000, 500, 1000]);
-                    }
-
-                    // Visual Strobe Alarm (Sangat efektif untuk iOS yang di-silent / tidak support haptic)
-                    clearInterval(flashInterval);
-                    let isRed = false;
-                    const overlayEl = document.getElementById('freeze-overlay');
-                    flashInterval = setInterval(() => {
-                        overlayEl.style.backgroundColor = isRed ? 'rgba(15, 23, 42, 0.96)' : 'rgba(220, 38, 38, 0.95)';
-                        isRed = !isRed;
-                    }, 150);
-                    
-                    // Stop strobing after 4 seconds (sama dengan durasi audio alarm)
-                    setTimeout(() => {
-                        clearInterval(flashInterval);
-                        if (overlayEl) overlayEl.style.backgroundColor = '';
-                    }, 4000);
+                if (document.hidden) return;
+                playAlarmSound();
+                if (navigator.vibrate) {
+                    navigator.vibrate([1000, 500, 1000, 500, 1000]);
                 }
+                clearInterval(flashInterval);
+                let isRed = false;
+                flashInterval = setInterval(function() {
+                    overlay.style.backgroundColor = isRed ? 'rgba(15, 23, 42, 0.96)' : 'rgba(220, 38, 38, 0.95)';
+                    isRed = !isRed;
+                }, 150);
+                setTimeout(function() {
+                    clearInterval(flashInterval);
+                    if (overlay) overlay.style.backgroundColor = '';
+                }, 4000);
             }
 
-            function startFreezeCountdown(seconds, totalViolations) {
-                overlay.classList.remove('hidden');
-                freezeLeft = seconds;
-                counter.innerText = freezeLeft;
+            // 1. Explicit Anti-Cheat State Machine: 'monitoring' | 'frozen' | 'disqualified' | 'submitting'
+            const AntiCheatMachine = {
+                state: 'monitoring',
+                serverTotalViolations: {{ (int)session('total_pelanggaran', 0) }},
+                freezeTimer: null,
+                freezeLeft: 0,
 
-                let remainingAttempts = 3 - totalViolations;
-                let warningText = document.getElementById('freeze-warning-text');
-                const isEn = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
-                if (warningText) {
-                    if (remainingAttempts > 0) {
+                updateWarningMessage(total) {
+                    if (!warningText) return;
+                    const remaining = Math.max(0, MAX_VIOLATIONS - total);
+                    if (remaining > 0) {
                         warningText.innerText = isEn
-                            ? `Strict Warning! If you leave the exam tab ${remainingAttempts} more time(s), the exam will be automatically stopped and submitted with a score of 0.`
-                            : `Peringatan Keras! Jika Anda keluar dari tab ujian ${remainingAttempts} kali lagi, ujian akan otomatis dihentikan dan disubmit dengan nilai 0.`;
+                            ? `Strict Warning! If you leave the exam tab ${remaining} more time(s), the exam will be automatically stopped and submitted with a score of 0.`
+                            : `Peringatan Keras! Jika Anda keluar dari tab ujian ${remaining} kali lagi, ujian akan otomatis dihentikan dan disubmit dengan nilai 0.`;
                     } else {
                         warningText.innerText = isEn
-                            ? `Violation limit reached. Processing exam submission...`
-                            : `Batas pelanggaran telah tercapai. Ujian sedang diproses...`;
+                            ? 'Violation limit reached. Processing exam submission...'
+                            : 'Batas pelanggaran telah tercapai. Ujian sedang diproses...';
                     }
-                }
+                },
 
-                clearInterval(freezeTimer);
-                freezeTimer = setInterval(function() {
-                    freezeLeft--;
-                    counter.innerText = freezeLeft;
-                    if (freezeLeft <= 0) {
-                        clearInterval(freezeTimer);
-                        overlay.classList.add('hidden');
-                        isFrozen = false;
-                        clearInterval(flashInterval);
-                        overlay.style.backgroundColor = '';
+                enterFrozen(seconds, total) {
+                    this.state = 'frozen';
+                    this.freezeLeft = seconds;
+                    overlay.classList.remove('hidden');
+                    counter.innerText = this.freezeLeft;
+                    this.updateWarningMessage(total);
+
+                    clearInterval(this.freezeTimer);
+                    this.freezeTimer = setInterval(() => {
+                        this.freezeLeft--;
+                        counter.innerText = Math.max(0, this.freezeLeft);
+                        if (this.freezeLeft <= 0) {
+                            clearInterval(this.freezeTimer);
+                            overlay.classList.add('hidden');
+                            clearInterval(flashInterval);
+                            overlay.style.backgroundColor = '';
+                            if (this.state === 'frozen') {
+                                this.state = 'monitoring';
+                            }
+                        }
+                    }, 1000);
+                },
+
+                submitForm(isDisqualification) {
+                    if (this.state === 'submitting' || this.state === 'disqualified') return;
+                    this.state = isDisqualification ? 'disqualified' : 'submitting';
+                    clearInterval(this.freezeTimer);
+                    clearInterval(flashInterval);
+                    if (isDisqualification) {
+                        overlay.classList.remove('hidden');
+                        counter.innerText = '0';
+                        this.updateWarningMessage(MAX_VIOLATIONS);
+                    } else {
+                        const loadingOverlay = document.getElementById('app-loading-overlay');
+                        if (loadingOverlay) loadingOverlay.classList.add('show');
                     }
-                }, 1000);
-            }
+                    formUjian.submit();
+                },
+
+                triggerViolation() {
+                    if (this.state !== 'monitoring') return;
+                    this.state = 'frozen';
+
+                    if (pelanggaranInput) {
+                        pelanggaranInput.value = (parseInt(pelanggaranInput.value, 10) || 0) + 1;
+                    }
+                    this.serverTotalViolations += 1;
+
+                    const csrfInput = formUjian.querySelector('input[name="_token"]');
+                    if (csrfInput) {
+                        fetch("{{ route('ujian.pelanggaran') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfInput.value,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({}),
+                            keepalive: true
+                        })
+                        .then(res => res.ok ? res.json() : null)
+                        .then(data => {
+                            if (!data) return;
+                            this.serverTotalViolations = data.total_pelanggaran;
+                            this.updateWarningMessage(data.total_pelanggaran);
+                            if (data.disqualified) {
+                                this.submitForm(true);
+                            }
+                        })
+                        .catch(() => {});
+                    }
+
+                    if (this.serverTotalViolations >= MAX_VIOLATIONS) {
+                        this.submitForm(true);
+                        return;
+                    }
+
+                    this.enterFrozen({{ \App\Services\ExamStateMachine::FREEZE_DURATION_SECONDS }}, this.serverTotalViolations);
+                    applyPenaltyEffects();
+                }
+            };
+
+            formUjian.addEventListener('submit', function() {
+                if (AntiCheatMachine.state !== 'disqualified') {
+                    AntiCheatMachine.state = 'submitting';
+                }
+            });
 
             // Resume active freeze if candidate hit F5/Reload during penalty
             const serverFreezeLeft = {{ max(0, (int)session('freeze_until', 0) - now()->timestamp) }};
             if (serverFreezeLeft > 0) {
-                isFrozen = true;
-                startFreezeCountdown(serverFreezeLeft, {{ (int)session('total_pelanggaran', 0) }});
+                AntiCheatMachine.enterFrozen(serverFreezeLeft, AntiCheatMachine.serverTotalViolations);
             }
 
-            function triggerFreeze() {
-                if (isFrozen || isSubmitting) return;
-                isFrozen = true;
-
-                // Increment local hidden input
-                const pelanggaranInput = document.getElementById('pelanggaran_sesi');
-                let currentSessionViolations = 0;
-                if (pelanggaranInput) {
-                    currentSessionViolations = parseInt(pelanggaranInput.value) || 0;
-                    currentSessionViolations += 1;
-                    pelanggaranInput.value = currentSessionViolations;
-                }
-
-                // Immediately persist violation to server so page reload (F5) cannot erase it
-                const csrfInput = formUjian.querySelector('input[name="_token"]');
-                if (csrfInput) {
-                    fetch("{{ route('ujian.pelanggaran') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfInput.value,
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({}),
-                        keepalive: true
-                    }).then(function(res) { return res.ok ? res.json() : null; })
-                      .then(function(data) {
-                          if (data && data.disqualified && !isSubmitting) {
-                              isSubmitting = true;
-                              formUjian.submit();
-                          }
-                      }).catch(function() {});
-                }
-
-                let previousViolations = {{ (int)session('total_pelanggaran', 0) }};
-                let totalViolations = previousViolations + currentSessionViolations;
-
-                // Auto-submit immediately without blocking alert() dialog
-                if (totalViolations >= 3) {
-                    isSubmitting = true;
-                    overlay.classList.remove('hidden');
-                    counter.innerText = '0';
-                    formUjian.submit();
-                    return;
-                }
-
-                startFreezeCountdown(30, totalViolations);
-                applyPenaltyEffects();
-            }
-
-            // --- Screen Wake Lock API ---
-            // Mencegah layar hp mati otomatis (sleep) yang bisa memicu pelanggaran palsu
+            // Screen Wake Lock API (prevents mobile screen sleep causing false violations)
             let wakeLock = null;
             async function requestWakeLock() {
                 try {
                     if ('wakeLock' in navigator) {
                         wakeLock = await navigator.wakeLock.request('screen');
                     }
-                } catch (err) {
-                    console.log('Wake Lock error:', err);
-                }
+                } catch (err) {}
             }
-            // Minta wake lock saat pengguna berinteraksi pertama kali (bersamaan dengan initAudio)
             document.addEventListener('click', requestWakeLock, { once: true });
             document.addEventListener('touchstart', requestWakeLock, { once: true });
 
             document.addEventListener('visibilitychange', function() {
                 if (document.hidden) {
-                    triggerFreeze();
+                    AntiCheatMachine.triggerViolation();
                 } else {
-                    // Browser otomatis melepas wake lock saat tab disembunyikan, jadi kita minta lagi saat tab aktif
-                    if (wakeLock !== null) {
-                        requestWakeLock();
-                    }
-                    if (isFrozen) {
-                        // Trigger kembali efek suara & visual saat user kembali ke tab ini
-                        applyPenaltyEffects();
-                    }
+                    if (wakeLock !== null) requestWakeLock();
+                    if (AntiCheatMachine.state === 'frozen') applyPenaltyEffects();
                 }
             });
             window.addEventListener('blur', function() {
-                triggerFreeze();
+                AntiCheatMachine.triggerViolation();
             });
-            // Safety net for split-screen / docked DevTools / missed blur events
             setInterval(function() {
-                if (!document.hasFocus() && !isFrozen && !isSubmitting) {
-                    triggerFreeze();
+                if (!document.hasFocus() && AntiCheatMachine.state === 'monitoring') {
+                    AntiCheatMachine.triggerViolation();
                 }
             }, 2000);
-        });
 
-        (function () {
-            var btn = document.getElementById('ujianThemeToggle');
-            var meta = document.querySelector('meta[name="color-scheme"]');
-            var mql = window.matchMedia('(prefers-color-scheme: dark)');
+            // 2. Explicit Exam Session Timer Machine: 'running' | 'critical' | 'expired'
+            const durationAttr = formUjian.dataset.duration;
+            const countdownEl = document.getElementById('countdown');
+            const timerBoxEl = document.getElementById('timerBox');
 
-            function applyScheme(scheme) {
-                if (scheme === 'light' || scheme === 'dark') {
-                    if (meta) meta.content = scheme;
-                    document.documentElement.setAttribute('data-theme', scheme);
-                    document.documentElement.setAttribute('data-bs-theme', scheme);
-                } else {
-                    if (meta) meta.content = 'light dark';
-                    document.documentElement.removeAttribute('data-theme');
-                    document.documentElement.setAttribute('data-bs-theme', mql.matches ? 'dark' : 'light');
-                }
-            }
+            const TimerMachine = {
+                state: 'running',
+                remaining: durationAttr !== undefined ? parseInt(durationAttr, 10) : null,
+                criticalThreshold: parseInt(formUjian.dataset.criticalThreshold || '60', 10),
+                intervalId: null,
 
-            if (btn) {
-                btn.addEventListener('click', function () {
-                    var stored = null;
-                    try { stored = localStorage.getItem('color-scheme'); } catch (e) {}
-                    var current = stored || (mql.matches ? 'dark' : 'light');
-                    var target = current === 'dark' ? 'light' : 'dark';
-                    var sysTheme = mql.matches ? 'dark' : 'light';
+                format(sec) {
+                    const safe = Math.max(0, sec);
+                    const m = Math.floor(safe / 60);
+                    const d = safe % 60;
+                    return (m < 10 ? '0' + m : m) + ':' + (d < 10 ? '0' + d : d);
+                },
 
-                    try {
-                        if (target === sysTheme) {
-                            localStorage.removeItem('color-scheme');
-                            applyScheme(null);
-                        } else {
-                            localStorage.setItem('color-scheme', target);
-                            applyScheme(target);
-                        }
-                    } catch (e) {
-                        applyScheme(target);
+                render() {
+                    if (!countdownEl || this.remaining === null) return;
+                    countdownEl.innerText = this.format(this.remaining);
+                    if (this.remaining <= this.criticalThreshold && this.state === 'running') {
+                        this.state = 'critical';
+                        if (timerBoxEl) timerBoxEl.classList.add('critical');
                     }
-                });
-            }
+                },
 
-            window.addEventListener('storage', function (e) {
-                if (e.key === 'color-scheme') {
-                    applyScheme(e.newValue);
+                start() {
+                    if (this.remaining === null || isNaN(this.remaining)) return;
+                    this.render();
+                    if (this.remaining <= 0) {
+                        this.state = 'expired';
+                        AntiCheatMachine.submitForm(false);
+                        return;
+                    }
+                    this.intervalId = setInterval(() => {
+                        this.remaining--;
+                        this.render();
+                        if (this.remaining <= 0) {
+                            clearInterval(this.intervalId);
+                            this.state = 'expired';
+                            AntiCheatMachine.submitForm(false);
+                        }
+                    }, 1000);
                 }
-            });
+            };
+            TimerMachine.start();
 
-            var progressBar = document.getElementById('top-progress-bar');
-            var loadingOverlay = document.getElementById('app-loading-overlay');
+            // 3. Explicit Exam Answer Progress Machine
+            const progressMode = formUjian.dataset.progressMode;
+            const totalQuestions = parseInt(formUjian.dataset.totalQuestions || '0', 10);
+            const questionPrefix = formUjian.dataset.questionPrefix || '';
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
 
-            function startProgress() {
-                if (progressBar) {
-                    progressBar.classList.add('active');
-                    progressBar.style.width = '75%';
+            const ProgressMachine = {
+                update() {
+                    if (!progressMode || totalQuestions <= 0) return;
+                    let answered = 0;
+
+                    if (progressMode === 'radio') {
+                        for (let i = 1; i <= totalQuestions; i++) {
+                            if (formUjian.querySelector(`input[name="${questionPrefix}${i}"]:checked`)) {
+                                answered++;
+                            }
+                        }
+                    } else if (progressMode === 'numeric') {
+                        for (let i = 1; i <= totalQuestions; i++) {
+                            const el = formUjian.querySelector(`input[name="${questionPrefix}${i}"]`);
+                            if (el && el.value.trim() !== '') answered++;
+                        }
+                    } else if (progressMode === 'textarea') {
+                        formUjian.querySelectorAll('.essay-input').forEach(ta => {
+                            if (ta.value.trim() !== '') answered++;
+                        });
+                    }
+
+                    const pct = (answered / totalQuestions) * 100;
+                    if (progressFill) progressFill.style.width = pct + '%';
+                    if (progressText) progressText.innerText = answered + '/' + totalQuestions;
+                },
+
+                bind() {
+                    if (!progressMode) return;
+                    if (progressMode === 'radio') {
+                        formUjian.querySelectorAll('input[type="radio"]').forEach(el => el.addEventListener('change', () => this.update()));
+                    } else if (progressMode === 'numeric') {
+                        formUjian.querySelectorAll('.input-jawaban').forEach(el => el.addEventListener('input', () => this.update()));
+                    } else if (progressMode === 'textarea') {
+                        formUjian.querySelectorAll('.essay-input').forEach(el => el.addEventListener('input', () => this.update()));
+                    }
+                    this.update();
                 }
-            }
+            };
+            ProgressMachine.bind();
 
-            function resetProgress() {
-                if (progressBar) {
-                    progressBar.style.width = '100%';
-                    setTimeout(function () {
-                        progressBar.classList.remove('active');
-                        progressBar.style.width = '0%';
-                    }, 200);
-                }
-                if (loadingOverlay) loadingOverlay.classList.remove('show');
-            }
-
-            document.addEventListener('click', function (e) {
-                var link = e.target.closest('a[href]');
-                if (!link) return;
-                var href = link.getAttribute('href');
-                if (!href || href.startsWith('#') || link.target === '_blank') return;
-                startProgress();
-            });
-
-            document.addEventListener('submit', function () {
-                startProgress();
-                if (loadingOverlay) loadingOverlay.classList.add('show');
-            });
-
-            window.addEventListener('pageshow', resetProgress);
-        })();
+            window.ExamRuntime = {
+                antiCheat: AntiCheatMachine,
+                timer: TimerMachine,
+                progress: ProgressMachine
+            };
+        });
     </script>
+    @include('partials.ui-machines-script', ['toggleId' => 'ujianThemeToggle'])
     @yield('scripts')
 </body>
 </html>

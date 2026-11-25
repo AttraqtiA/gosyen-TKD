@@ -48,17 +48,20 @@
 
 @section('content')
 @php
-    $posisi = session('posisi');
-    if (\Illuminate\Support\Facades\Schema::hasTable('bank_soal_sesi5')) {
-        $isCustomPosisi = !\DB::table('bank_soal_sesi5')->where('posisi', $posisi)->exists();
-    } else {
-        $isCustomPosisi = true;
-    }
+    $isCustomPosisi = $isCustomPosisi ?? true;
+    $totalSessions = $totalSessions ?? ($isCustomPosisi ? 4 : 5);
+    $isLastSession = $isLastSession ?? (($sesi == 4 && $isCustomPosisi) || ($sesi == 5 && !$isCustomPosisi));
 @endphp
 <div class="petunjuk-container">
+    <div class="text-center mb-3 d-flex justify-content-center flex-wrap gap-2">
+        <span class="badge-custom">{{ __('Tahap') }} {{ $sesi }} / {{ $totalSessions }}</span>
+        @if(isset($durasiMenit))
+            <span class="badge-custom">{{ __('Durasi:') }} {{ $durasiMenit }} {{ __('menit') }}</span>
+        @endif
+    </div>
     <h2 class="text-center fw-bold mb-4" style="color: var(--text-primary);">
         {{ __('Petunjuk Pengerjaan Sesi') }} {{ $sesi }}
-        @if(($sesi == 4 && $isCustomPosisi) || ($sesi == 5 && !$isCustomPosisi)) ({{ __('Terakhir') }}) @endif
+        @if($isLastSession) ({{ __('Terakhir') }}) @endif
     </h2>
 
 <div class="alert alert-danger">

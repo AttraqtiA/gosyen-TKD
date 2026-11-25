@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AccessRole;
 use Illuminate\Http\Request;
 use App\Models\AksesPin;
 use App\Models\PesertaUji;
@@ -14,13 +15,14 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        if (!session()->has('role_akses')) {
+        $accessRole = AccessRole::current();
+        if ($accessRole === null) {
             return redirect()->route('login');
         }
 
-        $role = session('role_akses');
+        $role = $accessRole->value;
 
-        if ($role === 'psikolog') {
+        if ($accessRole->isPsikolog()) {
             // Get filter params
             $tgl_awal = $request->input('tgl_awal', '');
             $tgl_akhir = $request->input('tgl_akhir', '');
@@ -83,15 +85,13 @@ class DashboardController extends Controller
 
     public function updatePin(Request $request)
     {
-        if (!session()->has('role_akses') || session('role_akses') !== 'admin') {
-            abort(403, 'Akses Ditolak.');
-        }
+        $this->checkAdmin();
 
         $request->validate([
             'pin_baru' => 'required|string',
         ]);
 
-        AksesPin::where('role', 'psikolog')->update([
+        AksesPin::where('role', AccessRole::PSIKOLOG->value)->update([
             'pin' => $request->pin_baru
         ]);
 
@@ -100,9 +100,7 @@ class DashboardController extends Controller
 
     public function export(Request $request)
     {
-        if (!session()->has('role_akses') || session('role_akses') !== 'psikolog') {
-            abort(403, 'Akses Ditolak.');
-        }
+        $this->checkPsikolog();
 
         $request->validate([
             'tgl_awal' => 'required|date',
@@ -170,9 +168,7 @@ class DashboardController extends Controller
 
     public function generatePdf($id)
     {
-        if (!session()->has('role_akses') || session('role_akses') !== 'psikolog') {
-            abort(403, 'Akses Ditolak.');
-        }
+        $this->checkPsikolog();
 
         $peserta = PesertaUji::with(['jawabanSesi2', 'jawabanSesi3', 'jawabanSesi4', 'jawabanSesi5', 'jawabanSesi6'])->findOrFail($id);
 
@@ -190,9 +186,7 @@ class DashboardController extends Controller
 
     public function generateWord($id)
     {
-        if (!session()->has('role_akses') || session('role_akses') !== 'psikolog') {
-            abort(403, 'Akses Ditolak.');
-        }
+        $this->checkPsikolog();
 
         $peserta = PesertaUji::with(['jawabanSesi2', 'jawabanSesi3', 'jawabanSesi4', 'jawabanSesi5', 'jawabanSesi6'])->findOrFail($id);
 
@@ -216,9 +210,16 @@ class DashboardController extends Controller
     // ADMIN CRUD METHODS
     // ==========================================
 
-    private function checkAdmin()
+    private function checkAdmin(): void
     {
-        if (!session()->has('role_akses') || session('role_akses') !== 'admin') {
+        if (AccessRole::current() !== AccessRole::ADMIN) {
+            abort(403, 'Akses Ditolak.');
+        }
+    }
+
+    private function checkPsikolog(): void
+    {
+        if (AccessRole::current() !== AccessRole::PSIKOLOG) {
             abort(403, 'Akses Ditolak.');
         }
     }
@@ -746,7 +747,7 @@ class DashboardController extends Controller
     // 7. EDIT CANDIDATE DATA AND EXAM RESPONSES
     public function editPeserta($id)
     {
-        if (!session()->has('role_akses') || !in_array(session('role_akses'), ['admin', 'psikolog'])) {
+        if (AccessRole::current() === null) {
             abort(403, 'Akses Ditolak.');
         }
 
@@ -784,7 +785,7 @@ class DashboardController extends Controller
 
     public function updatePeserta(Request $request, $id)
     {
-        if (!session()->has('role_akses') || !in_array(session('role_akses'), ['admin', 'psikolog'])) {
+        if (AccessRole::current() === null) {
             abort(403, 'Akses Ditolak.');
         }
 
@@ -848,10 +849,11 @@ class DashboardController extends Controller
 
     public function listRubrik()
     {
-        $role = session('role_akses');
-        if (!$role) {
+        $accessRole = AccessRole::current();
+        if ($accessRole === null) {
             abort(403, 'Akses Ditolak.');
         }
+        $role = $accessRole->value;
         $posisiList = \App\Models\Posisi::orderBy('nama', 'asc')->get();
         return view('dashboard.admin.rubrik', compact('role', 'posisiList'));
     }
